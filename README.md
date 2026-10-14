@@ -7,9 +7,11 @@ A local-first interior design application built with Next.js App Router, React, 
 Use Node.js 22.12+ (Node 24 was used for development).
 
 ```sh
-npm ci
+npm run setup
 npm run dev
 ```
+
+These commands run from the repository root. `setup` installs the locked dependencies in `frontend/`; the other root scripts forward to that package. You can also run `npm ci` and `npm run dev` directly inside `frontend/`.
 
 Open http://localhost:3000. No credentials are necessary for local demo mode. On Windows PowerShell, use `npm.cmd` if script execution policies block `npm.ps1`. If the npm shim hangs, use `node "C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js" run dev`.
 
@@ -62,8 +64,8 @@ Local projects live in `localStorage` under `spacesketch-projects-v1`. Export JS
 ## Supabase setup
 
 1. Create a Supabase project.
-2. Run `supabase/migrations/001_initial.sql` in its SQL editor. This creates profiles, projects, versions, assets, shares, a private storage bucket, indexes, RLS policies, and transaction-safe RPCs.
-3. Copy `.env.example` to `.env.local` and set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` using the project's public browser credentials. Never put a service-role key into this application.
+2. Run `backend/supabase/migrations/001_initial.sql` in its SQL editor. This creates profiles, projects, versions, assets, shares, a private storage bucket, indexes, RLS policies, and transaction-safe RPCs.
+3. Copy `frontend/.env.example` to `frontend/.env.local` and set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` using the project's public browser credentials. Never put a service-role key into this application.
 4. Enable email/password authentication. Set the Site URL to your deployment URL and allow `http://localhost:3000/reset-password` and your production `/reset-password` URL as redirect URLs.
 5. Restart Next.js. Open the account button to register/sign in. Save a project to sync it; use **Load cloud projects** on another device.
 6. Use **Share** to create a read-only URL, revoke existing links, or load and restore a historical cloud revision.
@@ -75,23 +77,23 @@ The SQL migration and live authentication/authorization/sharing flows **have not
 ## Architecture
 
 ```text
-app/                       App Router entry, password recovery, shared viewer
-components/studio.tsx      Dashboard, editor shell and properties
-components/floor-plan.tsx  Konva geometry editing and touch viewport
-components/scene.tsx       Live Three.js scene and procedural furniture
-components/cloud-panel.tsx Sharing and version restoration
-components/ui/            shadcn-compatible Radix button primitive
-stores/editor.ts          Canonical document, selection and edit history
-lib/model.ts              Zod schema, types, furniture catalog and presets
-lib/geometry.ts           Coordinates, area, SAT collision, snapping, validity
-lib/rooms.ts               Room resize and wall split topology operations
-lib/topology.ts            Shared-edge normalization and wall junctions
-lib/materials.ts           Deterministic procedural textures
-lib/storage.ts             Local persistence, import and download helpers
-lib/supabase.ts            Optional authenticated cloud operations
-supabase/migrations/      Database, RLS, storage and sharing setup
-tests/                    Vitest unit tests and Playwright workflows
+frontend/
+  app/                      Next.js routes, password recovery, shared viewer
+  components/               Dashboard, Konva editor, Three.js scene and UI
+  stores/editor.ts          Canonical document, selection and edit history
+  lib/                      Geometry, topology, models, materials and persistence
+  lib/supabase.ts           Browser client for authenticated backend operations
+  public/                   Frontend assets
+  tests/                    Vitest unit tests and Playwright workflows
+  .env.example              Public frontend configuration template
+  package.json              Frontend dependencies and commands
+backend/
+  supabase/migrations/      Database schema, RPCs, RLS and storage policies
+  README.md                 Supabase backend configuration
+package.json                Convenience scripts that run the frontend package
 ```
+
+The backend is hosted by Supabase. Its configuration and database code are separated from the frontend; the frontend keeps the client that calls it. See [frontend setup](frontend/README.md) and [backend setup](backend/README.md).
 
 Coordinates use X/Z on the floor plane and Y for height. 2D screen Y maps to world Z. Object dimensions are meters; rotation is stored in degrees, converted at the 3D boundary. Drag/resize interactions commit one document update at the end, producing one history entry. History is limited to 100 edits.
 
@@ -104,7 +106,7 @@ The initial dependency audit exposed critical advisories in jsPDF and Vitest; th
 ## Deployment to Vercel
 
 1. Push this directory to a Git repository and import it into Vercel.
-2. Select the Next.js preset, Node.js 22 or 24, install command `npm ci`, and build command `npm run build`.
+2. Set **Root Directory** to `frontend`. Select the Next.js preset, Node.js 22 or 24, install command `npm ci`, and build command `npm run build`.
 3. Set the two public Supabase variables for the relevant environments if cloud features are desired. Without them, the deployment remains a functional browser-local demo.
 4. Apply the database migration and add Vercel's production URL to Supabase Auth's Site URL/redirect allowlist.
 5. Deploy, then verify a fresh account, owner isolation, cloud reload, export, shared viewing, and revocation.

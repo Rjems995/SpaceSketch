@@ -1,3 +1,7 @@
+# Repository layout
+
+The Next.js application and its dependencies are in `frontend/`. Read the installed Next.js guides at `frontend/node_modules/next/dist/docs/` and the frontend instructions in `frontend/AGENTS.md`. The Supabase migrations and backend setup are in `backend/`. Root npm scripts forward to the frontend package.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 ## This is NOT the Next.js you know
