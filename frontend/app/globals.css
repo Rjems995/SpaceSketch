@@ -683,60 +683,9 @@ footer span {
 .mini-furniture > svg {
   width: 45px;
   height: 45px;
-  color: var(--furniture-color);
+  color: color-mix(in srgb, var(--furniture-color) 50%, #41392f);
   stroke-width: 1.6;
   filter: drop-shadow(3px 7px 2px #50483317);
-}
-.mini-sofa > svg,
-.mini-bed > svg,
-.mini-table > svg,
-.mini-rug > svg {
-  display: none;
-}
-.mini-sofa i {
-  position: absolute;
-  left: 16%;
-  top: 34%;
-  width: 68%;
-  height: 36%;
-  border: 7px solid var(--furniture-color);
-  border-top-width: 14px;
-  border-radius: 7px;
-  background: #ded7c8;
-  box-shadow: 1px 5px 0 #9c9382;
-}
-.mini-bed i {
-  position: absolute;
-  width: 54%;
-  height: 55%;
-  top: 24%;
-  background: #eae4d9;
-  border: 6px solid var(--furniture-color);
-  border-top-width: 13px;
-  transform: skewY(-12deg);
-  box-shadow: 4px 5px #a99b89;
-}
-.mini-table i {
-  width: 58%;
-  height: 26%;
-  border-radius: 50%;
-  background: var(--furniture-color);
-  transform: rotate(-10deg);
-  box-shadow:
-    0 5px #71553f,
-    0 23px 0 -8px #846549;
-}
-.mini-rug i {
-  width: 68%;
-  height: 45%;
-  background: repeating-linear-gradient(
-    0deg,
-    #c4b7a1,
-    #c4b7a1 2px,
-    #d8ccb7 3px
-  );
-  transform: skewY(-14deg);
-  border: 5px solid #e2d8c8;
 }
 .library-tip {
   font-size: 9px;

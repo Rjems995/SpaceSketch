@@ -17,7 +17,6 @@ import {
   Home,
   Layers,
   Leaf,
-  Lightbulb,
   Lock,
   Maximize,
   MousePointer2,
@@ -57,6 +56,7 @@ import {
   deleteCloudProject,
 } from "@/lib/supabase";
 import CloudPanel from "./cloud-panel";
+import FurnitureIcon from "./furniture-icon";
 import { resizeRoom, splitWall, deleteRoom, moveWallEndpoint } from "@/lib/rooms";
 import {
   cacheCloudRevision,
@@ -87,17 +87,6 @@ function Mark() {
     <span className="mark">
       <Layers size={23} />
     </span>
-  );
-}
-function FurnitureIcon({ kind }: { kind: string }) {
-  return kind === "plant" ? (
-    <Leaf />
-  ) : kind === "lamp" ? (
-    <Lightbulb />
-  ) : kind === "sofa" || kind === "chair" ? (
-    <Armchair />
-  ) : (
-    <Box />
   );
 }
 export default function Studio({ projectId }: { projectId?: string } = {}) {
@@ -872,9 +861,6 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                             }
                           >
                             <FurnitureIcon kind={c.kind} />
-                            <i />
-                            <b />
-                            <em />
                           </div>
                           <strong>{c.name}</strong>
                           <span>
