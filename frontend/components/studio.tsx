@@ -57,6 +57,7 @@ import {
 } from "@/lib/supabase";
 import CloudPanel from "./cloud-panel";
 import FurnitureIcon from "./furniture-icon";
+import BrandLogo from "./brand-logo";
 import { resizeRoom, splitWall, deleteRoom, moveWallEndpoint } from "@/lib/rooms";
 import {
   cacheCloudRevision,
@@ -82,13 +83,6 @@ const templates = [
   "Studio Apartment",
   "Office",
 ];
-function Mark() {
-  return (
-    <span className="mark">
-      <Layers size={23} />
-    </span>
-  );
-}
 export default function Studio({ projectId }: { projectId?: string } = {}) {
   const router = useRouter();
   const [missing, setMissing] = useState(false);
@@ -384,8 +378,8 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
             router.push("/dashboard");
           }}
         >
-          <Mark />
-          SpaceSketch<span className="beta">STUDIO</span>
+          <BrandLogo />
+          <span className="beta">STUDIO</span>
         </a>
         {p ? (
           <>
@@ -1750,7 +1744,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
             >
               <X />
             </button>
-            <Mark />
+            <BrandLogo large />
             <h2>{user ? "Your account" : "Welcome to your studio"}</h2>
             {!supabase ? (
               <>

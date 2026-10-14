@@ -2,6 +2,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import BrandLogo from "./brand-logo";
 import { supabase } from "@/lib/supabase";
 import { projectSchema } from "@/lib/model";
 import { useEditor } from "@/stores/editor";
@@ -35,7 +36,7 @@ export default function SharedViewer({ token }: { token: string }) {
     <>
       <header className="topbar">
         <Link className="brand" href="/">
-          SpaceSketch
+          <BrandLogo />
         </Link>
         <span>{p?.name}</span>
         <span className="top-tagline">Read-only design</span>

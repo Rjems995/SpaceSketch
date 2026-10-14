@@ -146,16 +146,18 @@ a {
   gap: 10px;
   white-space: nowrap;
 }
-.mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--green);
-  color: #fff;
-  width: 34px;
-  height: 36px;
-  border-radius: 9px;
-  transform: rotate(-5deg);
+.brand-logo {
+  display: block;
+  width: 96px;
+  height: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+  mix-blend-mode: multiply;
+}
+.brand-logo-large {
+  width: 240px;
+  max-width: 100%;
+  margin: 0 auto 16px;
 }
 .beta {
   font-size: 8px;
@@ -1203,10 +1205,6 @@ footer span {
   .hero-room {
     opacity: 0.7;
   }
-  .brand .mark {
-    width: 29px;
-    height: 31px;
-  }
 }
 @media (max-width: 650px) {
   .topbar {
@@ -1216,9 +1214,8 @@ footer span {
   .brand {
     font-size: 16px;
   }
-  .brand .mark {
-    width: 27px;
-    height: 29px;
+  .brand-logo:not(.brand-logo-large) {
+    width: 78px;
   }
   .divider,
   .project-name,

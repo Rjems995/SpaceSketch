@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import BrandLogo from "@/components/brand-logo";
 import { supabase } from "@/lib/supabase";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ export default function ResetPassword() {
           setBusy(false);
         })}
       >
+        <Link href="/"><BrandLogo large /></Link>
         <h2>Set a new password</h2>
         <label>
           New password
