@@ -35,7 +35,7 @@ test("create, edit, save, reopen, and export a project", async ({ page }) => {
   await page.getByLabel("Export project").selectOption("json");
   expect((await download).suggestedFilename()).toContain(".json");
   await page.getByRole("button", { name: "3D", exact: true }).click();
-  await expect(page.locator("canvas")).toBeVisible();
+  await expect(page.locator(".workspace canvas")).toBeVisible();
   await page.waitForTimeout(2000);
   await page.screenshot({ path: "test-results/editor-3d.png", fullPage: true });
 });
@@ -97,7 +97,7 @@ test("imports a self-contained glTF and retains asset provenance", async ({
     )
     .toBe("CC0");
   await page.reload();
-  await expect(page.locator("canvas")).toBeVisible();
+  await expect(page.locator(".workspace canvas")).toBeVisible();
 });
 
 test("living room renders and exports PNG, PDF, and GLB without runtime errors", async ({
@@ -109,7 +109,7 @@ test("living room renders and exports PNG, PDF, and GLB without runtime errors",
   await page
     .getByRole("button", { name: "Explore the living room template" })
     .click();
-  await expect(page.locator("canvas")).toBeVisible();
+  await expect(page.locator(".workspace canvas")).toBeVisible();
   await page.waitForTimeout(1500);
   await page.screenshot({
     path: "test-results/living-room.png",
@@ -129,7 +129,7 @@ test("mobile dashboard and touch editor fit the viewport", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "New project", exact: true }).click();
   await page.getByRole("button", { name: "2D", exact: true }).click();
-  await expect(page.locator("canvas").first()).toBeVisible();
+  await expect(page.locator(".workspace canvas").first()).toBeVisible();
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(390);

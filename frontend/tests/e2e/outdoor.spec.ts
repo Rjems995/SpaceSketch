@@ -17,7 +17,9 @@ test("adds outdoor items and edits a wall and window with persistence", async ({
   const handle = (await lengthArrow.boundingBox())!;
   await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
   await page.mouse.down();
-  await page.mouse.move(handle.x + handle.width / 2 + 80, handle.y + handle.height / 2, { steps: 8 });
+  await page.mouse.move(handle.x + handle.width / 2 + zoom, handle.y + handle.height / 2, { steps: 8 });
+  await expect(lengthArrow).toContainText("8.00 m");
+  await expect(page.getByLabel("End X (m)", { exact: true })).toHaveValue("7");
   await page.mouse.up();
   await expect(page.getByLabel("End X (m)", { exact: true })).toHaveValue("8");
   await page.getByTitle("Undo (Ctrl+Z)", { exact: true }).click();
@@ -27,7 +29,16 @@ test("adds outdoor items and edits a wall and window with persistence", async ({
   await expect(heightArrow).toBeVisible({ timeout: 20000 });
   await heightArrow.focus();
   await page.keyboard.press("ArrowUp");
-  await expect(heightArrow).toContainText("2.8 m");
+  await expect(heightArrow).toContainText("2.80 m");
+  const heightHandle = (await heightArrow.boundingBox())!;
+  await page.mouse.move(heightHandle.x + heightHandle.width / 2, heightHandle.y + heightHandle.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(heightHandle.x + heightHandle.width / 2, heightHandle.y + heightHandle.height / 2 - 50, { steps: 8 });
+  await expect(heightArrow).not.toContainText("2.80 m");
+  await page.screenshot({ path: "test-results/live-wall-resize.png" });
+  await page.keyboard.press("Escape");
+  await page.mouse.up();
+  await expect(heightArrow).toContainText("2.80 m");
   await page.getByRole("button", { name: "2D", exact: true }).click();
   await page.getByLabel("End X (m)", { exact: true }).fill("8");
   await page.getByRole("button", { name: "Add window", exact: true }).click();
@@ -42,4 +53,18 @@ test("adds outdoor items and edits a wall and window with persistence", async ({
   expect(saved.openings.at(-1)).toMatchObject({ kind: "window", width: 1.6, sill: 0.8 });
   await page.reload();
   await expect(page.locator("canvas").first()).toBeVisible();
+});
+
+test("renders all catalog models as 3D thumbnails", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", e => errors.push(e.message));
+  await page.goto("/");
+  await page.getByRole("button", { name: "New project", exact: true }).click();
+  await expect(page.locator(".furniture-preview-image")).toHaveCount(28, { timeout: 30000 });
+  const images = await page.locator(".furniture-preview-image").evaluateAll(nodes => nodes.map(n => ({ loaded: (n as HTMLImageElement).naturalWidth > 0, src: (n as HTMLImageElement).src })));
+  expect(images.every(i => i.loaded)).toBe(true);
+  expect(new Set(images.map(i => i.src)).size).toBe(28);
+  await page.getByRole("button", { name: "Living", exact: true }).click();
+  await page.screenshot({ path: "test-results/catalog-previews.png" });
+  expect(errors).toEqual([]);
 });

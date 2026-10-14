@@ -21,7 +21,7 @@ import WallResizeControls from "./wall-resize-controls";
 export default function FloorPlan() {
   const [polygon, setPolygon] = useState<Point[]>([]);
   const s = useEditor(),
-    p = s.project!;
+    p = (s.previewProject ?? s.project)!;
   const holder = useRef<HTMLDivElement>(null),
     stage = useRef<Konva.Stage>(null),
     transform = useRef<Konva.Transformer>(null);
@@ -369,40 +369,6 @@ export default function FloorPlan() {
                 fontSize={0.13}
                 fill="#686a60"
               />
-              {s.selected.includes(w.id) &&
-                (["a", "b"] as const).map((end) => (
-                  <Circle
-                    key={end}
-                    x={w[end].x}
-                    y={w[end].z}
-                    radius={0.09}
-                    fill="#c27c56"
-                    draggable
-                    onDragEnd={(e) => {
-                      const q = {
-                        x: snap(e.target.x()),
-                        z: snap(e.target.y()),
-                      };
-                      if (distance(q, w[end === "a" ? "b" : "a"]) < 0.2) return;
-                      s.edit((p) => {
-                        const target = p.walls.find((x) => x.id === w.id)!;
-                        const old = target[end];
-                        p.walls.forEach((other) => {
-                          (["a", "b"] as const).forEach((k) => {
-                            if (distance(other[k], old) < 0.001)
-                              other[k] = { ...q };
-                          });
-                        });
-                        p.rooms.forEach(
-                          (r) =>
-                            (r.points = r.points.map((v) =>
-                              distance(v, old) < 0.001 ? { ...q } : v,
-                            )),
-                        );
-                      });
-                    }}
-                  />
-                ))}
             </Group>
           ))}
           {visibleDesign(p).openings.map((o) => {
@@ -553,10 +519,11 @@ export default function FloorPlan() {
         </Layer>
       </Stage>
       {s.tool === "select" && p.walls.filter(w => s.selected.includes(w.id)).slice(0, 1).map(w => (
-        <div key={w.id} style={{ position: "absolute", left: Math.max(8, Math.min(size.width - 230, origin.x + (w.a.x + w.b.x) / 2 * zoom - 110)), top: Math.max(8, Math.min(size.height - 140, origin.y + (w.a.z + w.b.z) / 2 * zoom + 28)), zIndex: 3 }}>
-          <WallResizeControls wall={w} />
-        </div>
-      ))}
+        <WallResizeControls key={w.id} wall={w} positions={{
+          a: { x: origin.x + w.a.x * zoom, y: origin.y + w.a.z * zoom, dx: (w.a.x - w.b.x) / distance(w.a, w.b) * zoom, dy: (w.a.z - w.b.z) / distance(w.a, w.b) * zoom },
+          b: { x: origin.x + w.b.x * zoom, y: origin.y + w.b.z * zoom, dx: (w.b.x - w.a.x) / distance(w.a, w.b) * zoom, dy: (w.b.z - w.a.z) / distance(w.a, w.b) * zoom },
+          height: { x: origin.x + (w.a.x + w.b.x) / 2 * zoom, y: origin.y + (w.a.z + w.b.z) / 2 * zoom - 55, dx: 0, dy: -80 },
+        }} />      ))}
       <div className="canvas-hint">
         {s.tool === "select"
           ? "Drag to move · Shift + click to select multiple"

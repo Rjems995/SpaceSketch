@@ -9,11 +9,12 @@ import {
 } from "@react-three/drei";
 import { useEffect, useMemo, useRef, useState, Suspense } from "react";
 import ImportedModel from "./imported-model";
+import { Box, FurnitureModel } from "./furniture-model";
 import RenderBoundary from "./render-boundary";
-import WallResizeControls from "./wall-resize-controls";
+import WallResizeControls, { WallHandlePositions } from "./wall-resize-controls";
 import * as THREE from "three";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
-import { Furniture, Project } from "@/lib/model";
+import { Furniture, Project, Wall } from "@/lib/model";
 import { useEditor } from "@/stores/editor";
 import { corners, overlap } from "@/lib/geometry";
 import { download } from "@/lib/storage";
@@ -117,263 +118,6 @@ function FloorMaterial({
       metalness={material.metalness}
       map={material.texture === "solid" ? null : texture}
     />
-  );
-}
-function Box({
-  position,
-  size,
-  color,
-  roughness = 0.7,
-  metalness = 0,
-}: {
-  position: [number, number, number];
-  size: [number, number, number];
-  color: string;
-  roughness?: number;
-  metalness?: number;
-}) {
-  return (
-    <mesh position={position} castShadow receiveShadow>
-      <boxGeometry args={size} />
-      <meshStandardMaterial
-        color={color}
-        roughness={roughness}
-        metalness={metalness}
-      />
-    </mesh>
-  );
-}
-export function FurnitureModel({ o }: { o: Furniture }) {
-  const { width: w, depth: d, height: h, kind: k, material: m } = o;
-  const box = (
-    p: [number, number, number],
-    s: [number, number, number],
-    c = m.color,
-  ) => (
-    <Box
-      position={p}
-      size={s}
-      color={c}
-      roughness={m.roughness}
-      metalness={m.metalness}
-    />
-  );
-  const legs = (top: number) =>
-    [-1, 1].flatMap((x) =>
-      [-1, 1].map((z) => (
-        <Box
-          key={`${x}${z}`}
-          position={[x * w * 0.38, top / 2, z * d * 0.38]}
-          size={[0.045, top, 0.045]}
-          color="#554537"
-        />
-      )),
-    );
-  return (
-    <group>
-      {k === "umbrella" ? (
-        <>
-          {box([0, h * 0.45, 0], [0.06, h * 0.9, 0.06], "#73614c")}
-          {box([0, 0.04, 0], [w * 0.22, 0.08, d * 0.22], "#555653")}
-          <mesh position={[0, h * 0.9, 0]} scale={[1, 1, d / w]} castShadow>
-            <coneGeometry args={[w / 2, h * 0.2, 8]} />
-            <meshStandardMaterial color={m.color} side={THREE.DoubleSide} />
-          </mesh>
-        </>
-      ) : k === "pergola" ? (
-        <>
-          {[-1, 1].flatMap(x => [-1, 1].map(z => <Box key={`${x}${z}`} position={[x * (w / 2 - 0.07), h / 2, z * (d / 2 - 0.07)]} size={[0.14, h, 0.14]} color={m.color} />))}
-          {[-1, 1].map(z => <Box key={z} position={[0, h - 0.15, z * (d / 2 - 0.07)]} size={[w, 0.18, 0.14]} color={m.color} />)}
-          {Array.from({ length: 8 }, (_, i) => <Box key={i} position={[(i / 7 - 0.5) * (w - 0.12), h - 0.05, 0]} size={[0.12, 0.1, d]} color={m.color} />)}
-        </>
-      ) : k === "fence" ? (
-        <>
-          {[0.3, 0.7].map(y => <Box key={y} position={[0, h * y, 0]} size={[w, h * 0.1, d * 0.6]} color={m.color} />)}
-          {Array.from({ length: 11 }, (_, i) => <Box key={i} position={[(i / 10 - 0.5) * (w - w / 16), h / 2, 0]} size={[w / 16, h, d]} color={m.color} />)}
-        </>
-      ) : k === "hedge" || k === "planter" ? (
-        <>
-          {box([0, h * 0.22, 0], [w, h * 0.44, d], k === "planter" ? "#947251" : "#67553b")}
-          {box([0, h * 0.7, 0], [w * 0.94, h * 0.6, d * 0.94])}
-        </>
-      ) : k === "grill" ? (
-        <>
-          {legs(h * 0.55)}
-          {box([0, h * 0.65, 0], [w, h * 0.3, d])}
-          {box([0, h * 0.9, 0], [w * 0.8, h * 0.2, d * 0.85])}
-          {box([0, h * 0.85, d * 0.49], [w * 0.45, 0.035, 0.035], "#c4c4bd")}
-        </>
-      ) : k === "ottoman" ? (
-        <>{legs(h * 0.2)}{box([0, h * 0.6, 0], [w, h * 0.8, d])}</>
-      ) : k === "lounger" || k === "bench" ? (
-        <>
-          {legs(h * 0.4)}
-          {box([0, h * 0.45, 0], [w, h * 0.12, d])}
-          {box([0, h * 0.75, -d * 0.4], [w, h * 0.5, d * 0.15])}
-        </>
-      ) : k === "sofa" || k === "chair" ? (
-        <>
-          {box([0, h * 0.36, 0], [w, d * 0.05 + h * 0.25, d])}
-          {box([0, h * 0.72, -d * 0.4], [w, h * 0.56, d * 0.2])}
-          {[-1, 1].map((x) => (
-            <Box
-              key={x}
-              position={[x * (w / 2 - 0.09), h * 0.55, 0]}
-              size={[0.18, h * 0.55, d]}
-              color={m.color}
-            />
-          ))}
-          {Array.from({ length: k === "sofa" ? 3 : 1 }, (_, i) => (
-            <Box
-              key={i}
-              position={[
-                (i - (k === "sofa" ? 1 : 0)) * w * 0.29,
-                h * 0.55,
-                0.04,
-              ]}
-              size={[k === "sofa" ? w * 0.28 : w * 0.68, 0.12, d * 0.68]}
-              color={m.color}
-            />
-          ))}
-          {legs(0.2)}
-        </>
-      ) : k === "table" || k === "desk" || k === "dining" ? (
-        <>
-          {k === "table" ? (
-            <mesh position={[0, h - 0.045, 0]} castShadow>
-              <cylinderGeometry args={[w / 2, w / 2, 0.09, 48]} />
-              <meshStandardMaterial {...m} />
-            </mesh>
-          ) : (
-            box([0, h - 0.045, 0], [w, 0.09, d])
-          )}
-          {legs(h - 0.09)}
-        </>
-      ) : k === "bed" ? (
-        <>
-          {box([0, 0.2, 0], [w, 0.3, d])}
-          {box([0, 0.43, 0], [w * 0.96, 0.2, d * 0.95], "#eee9df")}
-          {box([0, h / 2, -d * 0.46], [w, h, 0.15])}
-          {box([0, 0.55, d * 0.2], [w * 0.97, 0.08, d * 0.5], m.color)}
-          {[-1, 1].map((x) => (
-            <Box
-              key={x}
-              position={[x * w * 0.24, 0.57, -d * 0.28]}
-              size={[w * 0.4, 0.13, d * 0.22]}
-              color="#fffaf1"
-            />
-          ))}
-        </>
-      ) : k === "rug" ? (
-        box([0, 0.02, 0], [w, 0.035, d])
-      ) : k === "plant" || k === "tree" ? (
-        <>
-          <mesh position={[0, 0.2, 0]} castShadow>
-            <cylinderGeometry args={[w * 0.25, w * 0.18, 0.4, 24]} />
-            <meshStandardMaterial color="#b8a18c" />
-          </mesh>
-          {box([0, h * 0.45, 0], [0.035, h * 0.65, 0.035], "#69583e")}
-          {[0, 1, 2, 3, 4].map((i) => (
-            <mesh
-              key={i}
-              position={[
-                Math.sin(i * 2) * w * 0.2,
-                h * (0.5 + i * 0.085),
-                Math.cos(i * 2) * d * 0.2,
-              ]}
-              castShadow
-            >
-              <sphereGeometry args={[w * 0.3, 12, 12]} />
-              <meshStandardMaterial color={m.color} />
-            </mesh>
-          ))}
-        </>
-      ) : k === "lamp" ? (
-        <>
-          {box([0, h / 2, 0], [0.025, h, 0.025])}
-          <mesh position={[0, 0.03, 0]}>
-            <cylinderGeometry args={[w * 0.4, w * 0.4, 0.06, 24]} />
-            <meshStandardMaterial color={m.color} />
-          </mesh>
-          <mesh position={[0, h * 0.85, 0]} castShadow>
-            <coneGeometry args={[w * 0.5, h * 0.25, 32, 1, true]} />
-            <meshStandardMaterial color="#efe1c7" side={THREE.DoubleSide} />
-          </mesh>
-          <pointLight
-            position={[0, h * 0.8, 0]}
-            intensity={3}
-            distance={4}
-            color="#ffdaa2"
-          />
-        </>
-      ) : k === "shelf" ? (
-        <>
-          {[-1, 1].map((x) => (
-            <Box
-              key={x}
-              position={[x * (w / 2 - 0.03), h / 2, 0]}
-              size={[0.06, h, d]}
-              color={m.color}
-            />
-          ))}
-          {[0, 1, 2, 3, 4].map((i) => (
-            <Box
-              key={i}
-              position={[0, (i * h) / 4 + 0.03, 0]}
-              size={[w, 0.06, d]}
-              color={m.color}
-            />
-          ))}
-        </>
-      ) : k === "bathtub" || k === "sink" ? (
-        <>
-          {box([0, h * 0.3, 0], [w, h * 0.6, d])}
-          {[-1, 1].map((x) => (
-            <Box
-              key={x}
-              position={[x * (w / 2 - 0.05), h * 0.8, 0]}
-              size={[0.1, h * 0.4, d]}
-              color={m.color}
-            />
-          ))}
-          {[-1, 1].map((z) => (
-            <Box
-              key={z}
-              position={[0, h * 0.8, z * (d / 2 - 0.05)]}
-              size={[w, 0.4 * h, 0.1]}
-              color={m.color}
-            />
-          ))}
-        </>
-      ) : k === "toilet" ? (
-        <>
-          {box([0, h * 0.6, -d * 0.35], [w, h * 0.8, d * 0.25])}
-          <mesh position={[0, h * 0.4, 0.05]} scale={[w, 0.2, d * 0.7]}>
-            <sphereGeometry args={[0.5, 24, 16]} />
-            <meshStandardMaterial color={m.color} />
-          </mesh>
-          {box([0, h * 0.2, 0.05], [w * 0.55, h * 0.4, d * 0.4])}
-        </>
-      ) : (
-        <>
-          {box([0, h / 2, 0], [w, h, d])}
-          {k !== "painting" && (
-            <>
-              {box(
-                [0, h / 2, d / 2 + 0.01],
-                [0.015, h * 0.95, 0.015],
-                "#73695e",
-              )}
-              {box(
-                [w * 0.08, h * 0.55, d / 2 + 0.035],
-                [0.025, 0.18, 0.04],
-                "#554b42",
-              )}
-            </>
-          )}
-        </>
-      )}
-    </group>
   );
 }
 function SceneContent({
@@ -698,6 +442,27 @@ function SceneContent({
     </>
   );
 }
+function ProjectWallHandles({ wall, onChange }: { wall: Wall; onChange: (p: WallHandlePositions) => void }) {
+  const last = useRef("");
+  useFrame(({ camera, size }) => {
+    const project = (x: number, y: number, z: number) => {
+      const v = new THREE.Vector3(x, y, z).project(camera);
+      return { x: Math.round((v.x + 1) * size.width / 2), y: Math.round((1 - v.y) * size.height / 2) };
+    };
+    const len = Math.hypot(wall.b.x - wall.a.x, wall.b.z - wall.a.z);
+    const dx = (wall.b.x - wall.a.x) / len, dz = (wall.b.z - wall.a.z) / len;
+    const a = project(wall.a.x, wall.height / 2, wall.a.z);
+    const b = project(wall.b.x, wall.height / 2, wall.b.z);
+    const h = project((wall.a.x + wall.b.x) / 2, wall.height, (wall.a.z + wall.b.z) / 2);
+    const va = project(wall.a.x - dx, wall.height / 2, wall.a.z - dz);
+    const vb = project(wall.b.x + dx, wall.height / 2, wall.b.z + dz);
+    const vh = project((wall.a.x + wall.b.x) / 2, wall.height + 1, (wall.a.z + wall.b.z) / 2);
+    const next = { a: { ...a, dx: va.x - a.x, dy: va.y - a.y }, b: { ...b, dx: vb.x - b.x, dy: vb.y - b.y }, height: { ...h, dx: vh.x - h.x, dy: vh.y - h.y } };
+    const serialized = JSON.stringify(next);
+    if (serialized !== last.current) { last.current = serialized; onChange(next); }
+  });
+  return null;
+}
 export default function Scene({
   preset,
   walk,
@@ -711,8 +476,10 @@ export default function Scene({
   ceiling: boolean;
   readOnly?: boolean;
 }) {
-  const p = useEditor((s) => s.project)!;
+  const p = useEditor((s) => s.previewProject ?? s.project)!;
   const selected = useEditor(s => s.selected);
+  const [handlePositions, setHandlePositions] = useState<WallHandlePositions | null>(null);
+  const selectedWall = !readOnly && !walk ? visibleDesign(p).walls.find(w => selected.includes(w.id)) : undefined;
   const [failed, setFailed] = useState(false);
   if (failed)
     return (
@@ -741,6 +508,7 @@ export default function Scene({
         }}
         onPointerMissed={() => useEditor.getState().select("")}
       >
+        {selectedWall && <ProjectWallHandles wall={selectedWall} onChange={setHandlePositions} />}
         <SceneContent
           p={p}
           preset={preset}
@@ -750,11 +518,7 @@ export default function Scene({
           readOnly={readOnly}
         />
       </Canvas>
-      {!readOnly && !walk && visibleDesign(p).walls.filter(w => selected.includes(w.id)).slice(0, 1).map(w => (
-        <div key={w.id} style={{ position: "absolute", top: 16, left: "50%", transform: "translateX(-50%)", zIndex: 3 }}>
-          <WallResizeControls wall={w} />
-        </div>
-      ))}
+      {selectedWall && handlePositions && <WallResizeControls key={selectedWall.id} wall={selectedWall} positions={handlePositions} />}
       </div>
     </RenderBoundary>
   );

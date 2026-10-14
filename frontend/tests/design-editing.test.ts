@@ -35,3 +35,22 @@ it("rejects overlapping windows and wall edits that no longer fit a window", () 
   p.openings.push({ ...p.openings[0], id: "window2", offset: 0.52 });
   expect(projectSchema.safeParse(p).success).toBe(false);
 });
+it("previews wall resizing without saving intermediate states and commits one undo step", () => {
+  const p = template("Empty Room");
+  const s = useEditor.getState();
+  s.load(p);
+  s.preview(p => { p.walls[0].height = 3; });
+  s.preview(p => { p.walls[0].height = 3.5; });
+  expect(useEditor.getState().project!.walls[0].height).toBe(2.7);
+  expect(useEditor.getState().previewProject!.walls[0].height).toBe(3.5);
+  expect(useEditor.getState().past).toHaveLength(0);
+  s.finishPreview(true);
+  expect(useEditor.getState().project!.walls[0].height).toBe(3.5);
+  expect(useEditor.getState().past).toHaveLength(1);
+  s.undo();
+  expect(useEditor.getState().project!.walls[0].height).toBe(2.7);
+  s.preview(p => { p.walls[0].height = 4; });
+  s.finishPreview(false);
+  expect(useEditor.getState().project!.walls[0].height).toBe(2.7);
+  expect(useEditor.getState().previewProject).toBeNull();
+});

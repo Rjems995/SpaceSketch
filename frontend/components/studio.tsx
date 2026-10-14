@@ -58,6 +58,9 @@ import {
 import CloudPanel from "./cloud-panel";
 import FurnitureIcon from "./furniture-icon";
 import BrandLogo from "./brand-logo";
+import type { PreviewImages } from "./furniture-previews";
+import Image from "next/image";
+const FurniturePreviews = dynamic(() => import("./furniture-previews"), { ssr: false });
 import { resizeRoom, splitWall, deleteRoom, moveWallEndpoint } from "@/lib/rooms";
 import {
   cacheCloudRevision,
@@ -84,6 +87,7 @@ const templates = [
   "Office",
 ];
 export default function Studio({ projectId }: { projectId?: string } = {}) {
+  const [previews, setPreviews] = useState<PreviewImages>({});
   const router = useRouter();
   const [missing, setMissing] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -830,6 +834,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                     Import GLB / glTF model
                   </button>
                   <div className="furniture-grid">
+                    <FurniturePreviews onReady={setPreviews} />
                     {catalog
                       .filter(
                         (c) =>
@@ -854,7 +859,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                               } as React.CSSProperties
                             }
                           >
-                            <FurnitureIcon kind={c.kind} />
+                            {previews[c.kind] ? <Image src={previews[c.kind]!} alt={`${c.name} 3D preview`} width={256} height={192} unoptimized className="furniture-preview-image" draggable={false} /> : <FurnitureIcon kind={c.kind} />}
                           </div>
                           <strong>{c.name}</strong>
                           <span>

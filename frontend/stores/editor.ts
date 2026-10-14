@@ -3,6 +3,9 @@ import { Project, Furniture, makeFurniture, projectSchema } from "@/lib/model";
 import { toast } from "sonner";
 type State = {
   project: Project | null;
+  previewProject: Project | null;
+  preview: (fn: (p: Project) => void) => void;
+  finishPreview: (commit: boolean) => void;
   past: Project[];
   future: Project[];
   selected: string[];
@@ -25,6 +28,20 @@ type State = {
 };
 export const useEditor = create<State>((set, get) => ({
   project: null,
+  previewProject: null,
+  preview: (fn) => {
+    const base = get().project;
+    if (!base) return;
+    const next = structuredClone(base);
+    try { fn(next); } catch { return; }
+    if (projectSchema.safeParse(next).success) set({ previewProject: next });
+  },
+  finishPreview: (commit) => {
+    const next = get().previewProject;
+    set({ previewProject: null });
+    if (commit && next && JSON.stringify(next) !== JSON.stringify(get().project))
+      get().edit(p => Object.assign(p, next));
+  },
   past: [],
   future: [],
   selected: [],
@@ -38,6 +55,7 @@ export const useEditor = create<State>((set, get) => ({
   load: (p) =>
     set({
       project: p,
+      previewProject: null,
       past: [],
       future: [],
       selected: [],
