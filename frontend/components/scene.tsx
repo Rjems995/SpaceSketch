@@ -10,6 +10,7 @@ import {
 import { useEffect, useMemo, useRef, useState, Suspense } from "react";
 import ImportedModel from "./imported-model";
 import RenderBoundary from "./render-boundary";
+import WallResizeControls from "./wall-resize-controls";
 import * as THREE from "three";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 import { Furniture, Project } from "@/lib/model";
@@ -613,6 +614,7 @@ function SceneContent({
             scale={[
               1,
               !walk &&
+              !selected.includes(w.id) &&
               !ceiling &&
               preset === "Isometric" &&
               ((w.a.x + w.b.x) / 2 >=
@@ -627,6 +629,7 @@ function SceneContent({
             rotation={[0, -Math.atan2(w.b.z - w.a.z, w.b.x - w.a.x), 0]}
             onClick={(e) => {
               e.stopPropagation();
+              if (readOnly || walk) return;
               select(w.id);
             }}
           >
@@ -709,6 +712,7 @@ export default function Scene({
   readOnly?: boolean;
 }) {
   const p = useEditor((s) => s.project)!;
+  const selected = useEditor(s => s.selected);
   const [failed, setFailed] = useState(false);
   if (failed)
     return (
@@ -724,6 +728,7 @@ export default function Scene({
         </div>
       }
     >
+      <div style={{ position: "relative", width: "100%", height: "100%" }}>
       <Canvas
         shadows={quality !== "Low"}
         dpr={quality === "High" ? [1, 2] : 1}
@@ -745,6 +750,12 @@ export default function Scene({
           readOnly={readOnly}
         />
       </Canvas>
+      {!readOnly && !walk && visibleDesign(p).walls.filter(w => selected.includes(w.id)).slice(0, 1).map(w => (
+        <div key={w.id} style={{ position: "absolute", top: 16, left: "50%", transform: "translateX(-50%)", zIndex: 3 }}>
+          <WallResizeControls wall={w} />
+        </div>
+      ))}
+      </div>
     </RenderBoundary>
   );
 }

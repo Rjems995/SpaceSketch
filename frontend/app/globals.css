@@ -694,6 +694,23 @@ footer span {
   margin: 22px 0 0;
   text-align: center;
 }
+.wall-resize-controls {
+  width: 220px;
+  padding: 10px;
+  border: 1px solid #c6ad91;
+  border-radius: 12px;
+  background: #fffdf7;
+  color: #40392f;
+  box-shadow: 0 5px 20px #30271f26;
+  font-size: 11px;
+  user-select: none;
+}
+.wall-resize-controls > div { display: flex; gap: 6px; margin: 7px 0; }
+.wall-resize-controls button { display: flex; align-items: center; gap: 7px; flex: 1; min-height: 48px; padding: 7px; border-radius: 7px; background: #efe4d4; touch-action: none; }
+.wall-resize-controls button:focus-visible { outline: 2px solid #926239; outline-offset: 2px; }
+.wall-resize-controls button span { text-transform: capitalize; text-align: left; }
+.wall-resize-controls strong { display: block; font-size: 13px; }
+.wall-resize-controls small { font-size: 10px; color: #716655; }
 .workspace {
   position: relative;
   flex: 1;

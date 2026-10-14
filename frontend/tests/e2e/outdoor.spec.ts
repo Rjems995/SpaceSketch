@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+test.use({ hasTouch: true });
 
 test("adds outdoor items and edits a wall and window with persistence", async ({ page }) => {
   await page.goto("/");
@@ -9,8 +10,25 @@ test("adds outdoor items and edits a wall and window with persistence", async ({
   await page.getByRole("button", { name: "Patio umbrella" }).click();
   const bounds = (await page.locator("canvas").first().boundingBox())!;
   const zoom = Math.max(15, Math.min(85, (bounds.width - 110) / 7, (bounds.height - 170) / 5));
-  await page.mouse.click(bounds.x + 65 + zoom, bounds.y + 95);
+  await page.touchscreen.tap(bounds.x + 65 + zoom, bounds.y + 95);
   await expect(page.getByText("Wall dimensions", { exact: true })).toBeVisible();
+  const lengthArrow = page.getByRole("button", { name: "Drag wall length", exact: true });
+  await expect(lengthArrow).toBeVisible();
+  const handle = (await lengthArrow.boundingBox())!;
+  await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(handle.x + handle.width / 2 + 80, handle.y + handle.height / 2, { steps: 8 });
+  await page.mouse.up();
+  await expect(page.getByLabel("End X (m)", { exact: true })).toHaveValue("8");
+  await page.getByTitle("Undo (Ctrl+Z)", { exact: true }).click();
+  await expect(page.getByLabel("End X (m)", { exact: true })).toHaveValue("7");
+  await page.getByRole("button", { name: "3D", exact: true }).click();
+  const heightArrow = page.getByRole("button", { name: "Drag wall height", exact: true });
+  await expect(heightArrow).toBeVisible({ timeout: 20000 });
+  await heightArrow.focus();
+  await page.keyboard.press("ArrowUp");
+  await expect(heightArrow).toContainText("2.8 m");
+  await page.getByRole("button", { name: "2D", exact: true }).click();
   await page.getByLabel("End X (m)", { exact: true }).fill("8");
   await page.getByRole("button", { name: "Add window", exact: true }).click();
   await page.mouse.click(bounds.x + 65 + zoom, bounds.y + 95);

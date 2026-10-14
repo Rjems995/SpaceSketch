@@ -17,6 +17,7 @@ import { area, distance, format, snap, smartPosition } from "@/lib/geometry";
 import { toast } from "sonner";
 import { visibleDesign } from "@/lib/rooms";
 import { insertWall } from "@/lib/topology";
+import WallResizeControls from "./wall-resize-controls";
 export default function FloorPlan() {
   const [polygon, setPolygon] = useState<Point[]>([]);
   const s = useEditor(),
@@ -308,7 +309,7 @@ export default function FloorPlan() {
                 stroke={s.selected.includes(w.id) ? "#b96f4b" : "#746f64"}
                 strokeWidth={w.thickness}
                 lineCap="square"
-                onMouseDown={(e) => {
+                onPointerDown={(e) => {
                   if (["select", "erase", "door", "window"].includes(s.tool)) {
                     e.cancelBubble = true;
                     if (s.tool === "erase") {
@@ -551,6 +552,11 @@ export default function FloorPlan() {
           />
         </Layer>
       </Stage>
+      {s.tool === "select" && p.walls.filter(w => s.selected.includes(w.id)).slice(0, 1).map(w => (
+        <div key={w.id} style={{ position: "absolute", left: Math.max(8, Math.min(size.width - 230, origin.x + (w.a.x + w.b.x) / 2 * zoom - 110)), top: Math.max(8, Math.min(size.height - 140, origin.y + (w.a.z + w.b.z) / 2 * zoom + 28)), zIndex: 3 }}>
+          <WallResizeControls wall={w} />
+        </div>
+      ))}
       <div className="canvas-hint">
         {s.tool === "select"
           ? "Drag to move · Shift + click to select multiple"
