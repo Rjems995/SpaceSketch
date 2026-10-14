@@ -29,9 +29,10 @@ Playwright uses installed Google Chrome (`channel: 'chrome'`). Change the channe
 ## Implemented interactions
 
 - Project dashboard: create, open, rename, duplicate, confirm deletion, search, recent sorting, and geometry-derived previews.
-- Seven editable starter presets, including a two-room studio apartment; sixteen procedural furniture types with original geometry and no remote asset dependencies.
+- Seven editable starter presets, including a two-room studio apartment; twenty-eight procedural furniture types with original geometry and no remote asset dependencies.
 - 2D: rectangular and custom polygon rooms, wall segments, connected endpoint editing, room resizing, wall splitting, doors/windows, saved measurement annotations, zoom, pan, adjustable grid snapping, wall endpoint snapping, furniture alignment and wall-edge snapping.
 - Rooms support naming, type assignment, hide/show and deletion; walls shared with another room are preserved. Partial shared edges and crossing/T junctions are split into unique segments, attached openings retain their world positions, and split endpoints are inserted into connected floor boundaries. Junctions that would cut an opening are rejected.
+- Outdoor collection: garden bench, sun lounger, patio umbrella, pergola, raised planter, tree, hedge, fence, and barbecue; additional indoor ottoman, bedside table, and dining table. Wall properties expose connected endpoint coordinates; door/window properties expose width, height, sill, and position with fit and overlap validation.
 - Furniture: click or drag from library into 2D, select, move, resize, rotate, duplicate, lock, delete, multi-select and group drag; precise property inputs update both canvases. Selected 3D objects expose move/rotate/scale gizmos.
 - Import self-contained GLB 2.0 or glTF files (up to 2.9 MB), record license/attribution, preserve embedded model data in JSON backups, and normalize model pivots. Models referencing external URLs are rejected.
 - 3D: generated floors and walls with actual openings; procedural furniture; orbit/pan/zoom; six camera presets; isometric cutaway; ceiling visibility; daylight/evening, sun direction, lamp lights, shadows, and three quality levels.
@@ -99,7 +100,7 @@ Coordinates use X/Z on the floor plane and Y for height. 2D screen Y maps to wor
 
 ## Verification
 
-The 28 unit tests cover coordinate conversion, wall lengths, concave polygon area, invalid polygons, rotated collisions, snapping, opening references/remapping, shared wall normalization, room resizing/splitting/visibility/deletion, asset URL validation, serialization, undo/redo and saved revision preservation, locked deletion, recovery, and local/cloud merge behavior. Five browser tests exercise drawing an actual room, furniture drag and undo, editing/materials/persistence/JSON, model import and provenance, real PNG/PDF/GLB downloads, direct editor URL reload, live 3D, and the mobile viewport. Browser screenshots are written into ignored `test-results/`.
+The 28 unit tests cover coordinate conversion, wall lengths, concave polygon area, invalid polygons, rotated collisions, snapping, opening references/remapping, shared wall normalization, room resizing/splitting/visibility/deletion, asset URL validation, serialization, undo/redo and saved revision preservation, locked deletion, recovery, and local/cloud merge behavior. Six browser tests exercise drawing an actual room, furniture drag and undo, editing/materials/persistence/JSON, model import and provenance, real PNG/PDF/GLB downloads, direct editor URL reload, live 3D, and the mobile viewport. Browser screenshots are written into ignored `test-results/`.
 
 The initial dependency audit exposed critical advisories in jsPDF and Vitest; these were upgraded to patched versions. Five high-severity development-tool advisories remain in the `eslint-config-next` → `fast-glob` → `micromatch` → `braces` chain. `npm audit --omit=dev` reports zero production dependency vulnerabilities. Do not apply an automatic forced downgrade of the Next.js lint configuration without testing compatibility.
 

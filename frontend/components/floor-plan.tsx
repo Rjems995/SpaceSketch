@@ -341,9 +341,10 @@ export default function FloorPlan() {
                         toast.error("Openings cannot overlap.");
                         return;
                       }
+                      const openingId = crypto.randomUUID();
                       s.edit((p) =>
                         p.openings.push({
-                          id: crypto.randomUUID(),
+                          id: openingId,
                           wallId: w.id,
                           kind: s.tool as "door" | "window",
                           offset: t,
@@ -352,6 +353,10 @@ export default function FloorPlan() {
                           sill: s.tool === "door" ? 0 : 0.9,
                         }),
                       );
+                      if (useEditor.getState().project?.openings.some(o => o.id === openingId)) {
+                        s.select(openingId);
+                        useEditor.setState({ tool: "select" });
+                      }
                     } else s.select(w.id);
                   }
                 }}

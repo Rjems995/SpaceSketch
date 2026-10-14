@@ -32,6 +32,7 @@ export const kinds = [
   "fridge",
   "cabinet",
   "painting",
+  "bench", "lounger", "umbrella", "pergola", "planter", "tree", "hedge", "fence", "grill", "ottoman", "nightstand", "dining",
 ] as const;
 export const furnitureSchema = z.object({
   id: z.string(),
@@ -151,8 +152,10 @@ export const projectSchema = z
           message: "Walls must have positive length",
         });
     });
-    p.openings.forEach((o) => {
+    p.openings.forEach((o, i) => {
       const w = p.walls.find((w) => w.id === o.wallId);
+      if (w && p.openings.slice(i + 1).some((other) => other.wallId === o.wallId && Math.abs(other.offset - o.offset) * distance(w.a, w.b) < (other.width + o.width) / 2 - 0.001))
+        ctx.addIssue({ code: "custom", message: "Openings cannot overlap" });
       if (
         !w ||
         o.offset * distance(w.a, w.b) < o.width / 2 - 0.001 ||
@@ -184,6 +187,18 @@ export const catalog: {
   size: [number, number, number];
   color: string;
 }[] = [
+  { kind: "bench", name: "Garden bench", category: "Outdoor", size: [1.6, 0.65, 0.9], color: "#98734f" },
+  { kind: "lounger", name: "Poolside sun lounger", category: "Outdoor", size: [0.8, 2, 0.7], color: "#d6c6a5" },
+  { kind: "umbrella", name: "Patio umbrella", category: "Outdoor", size: [2.6, 2.6, 2.5], color: "#eadcc4" },
+  { kind: "pergola", name: "Timber pergola", category: "Outdoor", size: [3, 3, 2.6], color: "#a38058" },
+  { kind: "planter", name: "Raised garden planter", category: "Outdoor", size: [1.2, 0.55, 0.7], color: "#678453" },
+  { kind: "tree", name: "Garden tree", category: "Outdoor", size: [2, 2, 3.5], color: "#64804e" },
+  { kind: "hedge", name: "Privacy hedge", category: "Outdoor", size: [2, 0.65, 1.5], color: "#557044" },
+  { kind: "fence", name: "Timber garden fence", category: "Outdoor", size: [2, 0.15, 1.2], color: "#aa8961" },
+  { kind: "grill", name: "Outdoor barbecue grill", category: "Outdoor", size: [1.1, 0.6, 1.1], color: "#45494a" },
+  { kind: "ottoman", name: "Upholstered ottoman", category: "Living", size: [0.85, 0.65, 0.45], color: "#b39479" },
+  { kind: "nightstand", name: "Bedside drawer table", category: "Bedroom", size: [0.5, 0.4, 0.55], color: "#b09476" },
+  { kind: "dining", name: "Rectangular dining table", category: "Kitchen", size: [1.8, 0.9, 0.76], color: "#98734f" },
   {
     kind: "sofa",
     name: "Linen three-seat sofa",
@@ -293,7 +308,7 @@ export const catalog: {
     kind: "painting",
     name: "Abstract wall artwork",
     category: "Decor",
-    size: [1, 0.05, 0.8],
+    size: [1, 0.1, 0.8],
     color: "#aa715b",
   },
 ];

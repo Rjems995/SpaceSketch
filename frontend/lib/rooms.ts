@@ -108,3 +108,11 @@ export function splitWall(p: Project, id: string) {
       } else o.offset *= 2;
     });
 }
+export function moveWallEndpoint(p: Project, id: string, end: "a" | "b", next: Point) {
+  const wall = p.walls.find(w => w.id === id);
+  if (!wall) return;
+  const old = { ...wall[end] };
+  const convert = (q: Point) => distance(old, q) < 0.001 ? { ...next } : q;
+  p.walls.forEach(w => { w.a = convert(w.a); w.b = convert(w.b); });
+  p.rooms.forEach(r => { r.points = r.points.map(convert); });
+}

@@ -170,7 +170,47 @@ export function FurnitureModel({ o }: { o: Furniture }) {
     );
   return (
     <group>
-      {k === "sofa" || k === "chair" ? (
+      {k === "umbrella" ? (
+        <>
+          {box([0, h * 0.45, 0], [0.06, h * 0.9, 0.06], "#73614c")}
+          {box([0, 0.04, 0], [w * 0.22, 0.08, d * 0.22], "#555653")}
+          <mesh position={[0, h * 0.9, 0]} scale={[1, 1, d / w]} castShadow>
+            <coneGeometry args={[w / 2, h * 0.2, 8]} />
+            <meshStandardMaterial color={m.color} side={THREE.DoubleSide} />
+          </mesh>
+        </>
+      ) : k === "pergola" ? (
+        <>
+          {[-1, 1].flatMap(x => [-1, 1].map(z => <Box key={`${x}${z}`} position={[x * (w / 2 - 0.07), h / 2, z * (d / 2 - 0.07)]} size={[0.14, h, 0.14]} color={m.color} />))}
+          {[-1, 1].map(z => <Box key={z} position={[0, h - 0.15, z * (d / 2 - 0.07)]} size={[w, 0.18, 0.14]} color={m.color} />)}
+          {Array.from({ length: 8 }, (_, i) => <Box key={i} position={[(i / 7 - 0.5) * (w - 0.12), h - 0.05, 0]} size={[0.12, 0.1, d]} color={m.color} />)}
+        </>
+      ) : k === "fence" ? (
+        <>
+          {[0.3, 0.7].map(y => <Box key={y} position={[0, h * y, 0]} size={[w, h * 0.1, d * 0.6]} color={m.color} />)}
+          {Array.from({ length: 11 }, (_, i) => <Box key={i} position={[(i / 10 - 0.5) * (w - w / 16), h / 2, 0]} size={[w / 16, h, d]} color={m.color} />)}
+        </>
+      ) : k === "hedge" || k === "planter" ? (
+        <>
+          {box([0, h * 0.22, 0], [w, h * 0.44, d], k === "planter" ? "#947251" : "#67553b")}
+          {box([0, h * 0.7, 0], [w * 0.94, h * 0.6, d * 0.94])}
+        </>
+      ) : k === "grill" ? (
+        <>
+          {legs(h * 0.55)}
+          {box([0, h * 0.65, 0], [w, h * 0.3, d])}
+          {box([0, h * 0.9, 0], [w * 0.8, h * 0.2, d * 0.85])}
+          {box([0, h * 0.85, d * 0.49], [w * 0.45, 0.035, 0.035], "#c4c4bd")}
+        </>
+      ) : k === "ottoman" ? (
+        <>{legs(h * 0.2)}{box([0, h * 0.6, 0], [w, h * 0.8, d])}</>
+      ) : k === "lounger" || k === "bench" ? (
+        <>
+          {legs(h * 0.4)}
+          {box([0, h * 0.45, 0], [w, h * 0.12, d])}
+          {box([0, h * 0.75, -d * 0.4], [w, h * 0.5, d * 0.15])}
+        </>
+      ) : k === "sofa" || k === "chair" ? (
         <>
           {box([0, h * 0.36, 0], [w, d * 0.05 + h * 0.25, d])}
           {box([0, h * 0.72, -d * 0.4], [w, h * 0.56, d * 0.2])}
@@ -196,7 +236,7 @@ export function FurnitureModel({ o }: { o: Furniture }) {
           ))}
           {legs(0.2)}
         </>
-      ) : k === "table" || k === "desk" ? (
+      ) : k === "table" || k === "desk" || k === "dining" ? (
         <>
           {k === "table" ? (
             <mesh position={[0, h - 0.045, 0]} castShadow>
@@ -225,7 +265,7 @@ export function FurnitureModel({ o }: { o: Furniture }) {
         </>
       ) : k === "rug" ? (
         box([0, 0.02, 0], [w, 0.035, d])
-      ) : k === "plant" ? (
+      ) : k === "plant" || k === "tree" ? (
         <>
           <mesh position={[0, 0.2, 0]} castShadow>
             <cylinderGeometry args={[w * 0.25, w * 0.18, 0.4, 24]} />

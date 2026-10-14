@@ -57,7 +57,7 @@ import {
   deleteCloudProject,
 } from "@/lib/supabase";
 import CloudPanel from "./cloud-panel";
-import { resizeRoom, splitWall, deleteRoom } from "@/lib/rooms";
+import { resizeRoom, splitWall, deleteRoom, moveWallEndpoint } from "@/lib/rooms";
 import {
   cacheCloudRevision,
   mergeCloudProjects,
@@ -816,6 +816,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                       "Office",
                       "Decor",
                       "Lighting",
+                      "Outdoor",
                     ].map((c) => (
                       <button
                         key={c}
@@ -1300,6 +1301,18 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                 ) : wall ? (
                   <>
                     <h3>Wall dimensions</h3>
+                    <p>Dimensions are in meters. Move either endpoint to change the length or angle; connected walls follow.</p>
+                    {(["a", "b"] as const).map(end => (["x", "z"] as const).map(axis => (
+                      <label key={`${end}${axis}`}>
+                        {end === "a" ? "Start" : "End"} {axis.toUpperCase()} (m)
+                        <input type="number" step="0.1" min="-100" max="100" value={wall[end][axis]}
+                          onChange={e => { if (e.target.value !== "") s.edit(p => moveWallEndpoint(p, wall.id, end, { ...wall[end], [axis]: Number(e.target.value) })); }} />
+                      </label>
+                    )))}
+                    <div className="row">
+                      {(["window", "door"] as const).map(kind => <button key={kind} className="secondary" onClick={() => { setTab("Build"); useEditor.setState({ tool: kind, view: "2d" }); }}>Add {kind}</button>)}
+                    </div>
+                    <p>Choose Add window or Add door, then click its position on a wall.</p>
                     {(["height", "thickness"] as const).map((k) => (
                       <label key={k}>
                         {k}
@@ -1528,6 +1541,18 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                   </>
                 ) : opening ? (
                   <>
+                    <h3>{opening.kind === "window" ? "Window" : "Door"} dimensions</h3>
+                    {(["width", "height", "sill", "offset"] as const).map(key => (
+                      <label key={key}>
+                        {key === "offset" ? "Position along wall (%)" : `${key} (m)`}
+                        <input type="number" step={key === "offset" ? 1 : 0.1}
+                          min={key === "width" || key === "height" ? 0.3 : 0}
+                          max={key === "offset" ? 100 : key === "width" ? 4 : key === "height" ? 3 : 2}
+                          value={key === "offset" ? Math.round(opening.offset * 10000) / 100 : opening[key]}
+                          onChange={e => { if (e.target.value !== "") s.edit(p => { p.openings.find(o => o.id === opening.id)![key] = Number(e.target.value) / (key === "offset" ? 100 : 1); }); }} />
+                      </label>
+                    ))}
+                    <p>Openings must fit within the wall and cannot overlap.</p>
                     <p>
                       {opening.kind} · {opening.width} m × {opening.height} m
                     </p>
