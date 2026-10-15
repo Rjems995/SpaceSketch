@@ -68,6 +68,16 @@ export const wallSchema = z.object({
   thickness: z.number().min(0.05).max(1),
   material,
 });
+export const surfaceKinds = ["patio", "grass", "path", "pool", "terrain"] as const;
+export const surfaceSchema = z.object({
+  id: z.string(), name: z.string().max(100), kind: z.enum(surfaceKinds),
+  x: point.shape.x, z: point.shape.z,
+  width: z.number().min(0.3).max(100), depth: z.number().min(0.3).max(100),
+  elevation: z.number().min(-3).max(3).default(0),
+  slope: z.number().min(-2).max(2).default(0),
+  rotation: z.number().finite().default(0),
+  color: z.string().regex(/^#[0-9a-f]{6}$/i),
+});
 export const projectSchema = z
   .object({
     schemaVersion: z.literal(1),
@@ -105,6 +115,7 @@ export const projectSchema = z
       )
       .max(100),
     walls: z.array(wallSchema).max(1000),
+    surfaces: z.array(surfaceSchema).max(200).default([]),
     openings: z
       .array(
         z.object({
@@ -115,6 +126,7 @@ export const projectSchema = z
           width: z.number().min(0.3).max(4),
           height: z.number().min(0.3).max(3),
           sill: z.number().min(0).max(2),
+          style: z.enum(["classic", "sliding", "double"]).optional(),
         }),
       )
       .max(500),
@@ -142,6 +154,7 @@ export const projectSchema = z
       ...p.openings,
       ...p.furniture,
       ...p.measurements,
+      ...p.surfaces,
     ].map((o) => o.id);
     if (new Set(ids).size !== ids.length)
       ctx.addIssue({ code: "custom", message: "Object IDs must be unique" });
@@ -172,6 +185,9 @@ export type Project = z.infer<typeof projectSchema>;
 export type Furniture = z.infer<typeof furnitureSchema>;
 export type Wall = z.infer<typeof wallSchema>;
 export type Point = z.infer<typeof point>;
+export type Surface = z.infer<typeof surfaceSchema>;
+export type Opening = Project["openings"][number];
+export const surfaceColors: Record<Surface["kind"], string> = { patio: "#b9ac96", grass: "#799258", path: "#c4b9a6", pool: "#60b7ca", terrain: "#9b8865" };
 export const mat = (color: string) => ({
   color,
   roughness: 0.75,
@@ -379,6 +395,7 @@ export function template(name = "Living Room"): Project {
     cloudRevision: 0,
     rooms: [],
     walls: [],
+    surfaces: [],
     openings: [],
     furniture: [],
     lighting: { night: false, sun: 45 },

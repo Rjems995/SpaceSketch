@@ -32,6 +32,9 @@ Playwright uses installed Google Chrome (`channel: 'chrome'`). Change the channe
 - Seven editable starter presets, including a two-room studio apartment; twenty-eight procedural furniture types with original geometry and no remote asset dependencies.
 - 2D: rectangular and custom polygon rooms, wall segments, connected endpoint editing, room resizing, wall splitting, doors/windows, saved measurement annotations, zoom, pan, adjustable grid snapping, wall endpoint snapping, furniture alignment and wall-edge snapping.
 - Rooms support naming, type assignment, hide/show and deletion; walls shared with another room are preserved. Partial shared edges and crossing/T junctions are split into unique segments, attached openings retain their world positions, and split endpoints are inserted into connected floor boundaries. Junctions that would cut an opening are rejected.
+- Outdoor surfaces: draw rectangular patios, grass, paths, pools, and terrain in Build or Furniture > Outdoor. Edit dimensions, position, rotation, color, and elevation; terrain also supports a linear slope. Surfaces are saved in JSON and included in PDF/GLB exports. These are design surfaces, not terrain excavation or a sculpting system.
+- Opening editing: drag doors/windows along their wall or use Move, Width, and Height handles in 2D/3D. Choose classic, sliding, or double frames. Live previews retain the last valid non-overlapping geometry, support Escape cancellation, and commit one undo step.
+- Placement guides: 2D wall endpoint alignment, furniture center/edge snapping, angled wall snapping, opening center/grid snapping, and visible alignment/spacing labels. The grid snapping toggle controls alignment assistance.
 - Outdoor collection: garden bench, sun lounger, patio umbrella, pergola, raised planter, tree, hedge, fence, and barbecue; additional indoor ottoman, bedside table, and dining table. Wall properties expose connected endpoint coordinates; door/window properties expose width, height, sill, and position with fit and overlap validation.
 - Live wall handles attach to both endpoints and the top in 3D, and endpoints plus a height handle in 2D. Geometry previews during dragging, connected boundaries follow, Escape cancels, and release creates one undo step. Intermediate previews are excluded from autosave. Invalid geometry stays at the last valid preview.
 - Catalog cards render miniature 3D previews of all 28 models through one shared renderer. Models include rounded furniture edges, sofa cushions, slatted benches, angled loungers, drawer fronts, and shelf contents; icons remain as loading/WebGL fallbacks.
@@ -43,7 +46,7 @@ Playwright uses installed Google Chrome (`channel: 'chrome'`). Change the channe
 - Measurements use meters internally, with m/cm/ft/in display. Area uses polygon geometry. Collision warnings use rotated furniture bounds and wall thickness.
 - Undo/redo, 900 ms debounced local autosave, tab-local interrupted-session recovery, local revision conflict detection, JSON validation, and import size limits. Individual projects have `/editor/[projectId]` URLs that reopen on refresh.
 - Export JSON, vector PDF floor plans, PNG/JPEG views, and GLB design geometry. Image/GLB export requires a visible 3D canvas. GLB restores full wall height and omits viewport rendering helpers.
-- Responsive dashboard, collapsible mobile library, mobile selection properties, and 2D pinch zoom/two-finger pan.
+- Responsive dashboard, collapsible mobile library, selection-preserving collapsible properties, larger touch targets, 2D pinch zoom/two-finger pan, and 3D zoom/orbit/pan/reset buttons.
 - User-entered budget totals; these are estimates with no supplier pricing feed.
 - Supabase integration code: email/password sign-in, registration, password reset, logout, cloud save/load, optimistic cloud revisions, retained versions, read-only links, and revocation.
 
@@ -102,7 +105,7 @@ Coordinates use X/Z on the floor plane and Y for height. 2D screen Y maps to wor
 
 ## Verification
 
-The 32 unit tests cover coordinate conversion, wall lengths, concave polygon area, invalid polygons, rotated collisions, snapping, opening references/remapping, shared wall normalization, room resizing/splitting/visibility/deletion, asset URL validation, serialization, undo/redo and saved revision preservation, locked deletion, recovery, and local/cloud merge behavior. Seven browser tests exercise drawing an actual room, furniture drag and undo, editing/materials/persistence/JSON, model import and provenance, real PNG/PDF/GLB downloads, direct editor URL reload, live 3D, and the mobile viewport. Browser screenshots are written into ignored `test-results/`.
+The 37 unit tests cover coordinate conversion, wall lengths, concave polygon area, invalid polygons, rotated collisions, snapping, opening references/remapping, shared wall normalization, room resizing/splitting/visibility/deletion, asset URL validation, serialization, undo/redo and saved revision preservation, locked deletion, recovery, and local/cloud merge behavior. Nine browser tests exercise drawing an actual room, furniture drag and undo, editing/materials/persistence/JSON, model import and provenance, real PNG/PDF/GLB downloads, direct editor URL reload, live 3D, and the mobile viewport. Browser screenshots are written into ignored `test-results/`.
 
 The initial dependency audit exposed critical advisories in jsPDF and Vitest; these were upgraded to patched versions. Five high-severity development-tool advisories remain in the `eslint-config-next` → `fast-glob` → `micromatch` → `braces` chain. `npm audit --omit=dev` reports zero production dependency vulnerabilities. Do not apply an automatic forced downgrade of the Next.js lint configuration without testing compatibility.
 
@@ -121,7 +124,7 @@ No hosted deployment was created as part of local development.
 This is a functional portfolio application, **not a fully completed production CAD platform**. The original brief is broader than the current implementation:
 
 - Standalone wall loops do not automatically become floor polygons; use the custom polygon room tool. Shared boundaries are normalized, but overlapping room floors are not automatically merged and should be avoided when drawing.
-- Multiple floors, viewport rulers, a full constraint solver, spacing guides, and automatic placement suggestions remain unimplemented. Collision warnings do not universally prevent overlaps.
+- Multiple floors, viewport rulers, a full constraint solver and automatic placement suggestions remain unimplemented. Collision warnings do not universally prevent overlaps.
 - Walkthrough has adjustable speed, a default eye height of 1.65 m, and 2D collision proxies. It is intended for desktop pointer-lock input.
 - Licensed remote model catalogs, separate-file glTF dependencies, user texture upload, wallpaper/brick, spotlights, and postprocessing AO are not implemented. Embedded imported models count toward the 5 MB project cap and browser storage quota. Source colors are retained for imported models.
 - The studio preset has living and bedroom spaces; it is not a fully furnished multi-room house. Furniture categories are a starter subset of the requested catalog.

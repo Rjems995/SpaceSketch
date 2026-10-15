@@ -117,11 +117,27 @@ export function smartPosition(
     if (other.id === o.id || other.kind === "rug") continue;
     if (Math.abs(x - other.x) < 0.12) x = other.x;
     if (Math.abs(z - other.z) < 0.12) z = other.z;
+    const mine = corners({ ...o, x, z }), theirs = corners(other);
+    for (const axis of ["x", "z"] as const) {
+      const center = axis === "x" ? x : z;
+      const own = [Math.min(...mine.map(p => p[axis])) - center, 0, Math.max(...mine.map(p => p[axis])) - center];
+      const targets = [Math.min(...theirs.map(p => p[axis])), other[axis], Math.max(...theirs.map(p => p[axis]))];
+      const matches = own.flatMap(edge => targets.map(target => target - edge)).filter(v => Math.abs(v - center) < 0.1).sort((a, b) => Math.abs(a - center) - Math.abs(b - center));
+      if (matches.length) { if (axis === "x") x = matches[0]; else z = matches[0]; }
+    }
   }
   const cs = corners({ ...o, x, z });
   const halfX = Math.max(...cs.map((c) => Math.abs(c.x - x))),
     halfZ = Math.max(...cs.map((c) => Math.abs(c.z - z)));
   for (const w of walls) {
+    const len = distance(w.a, w.b), ux = (w.b.x - w.a.x) / len, uz = (w.b.z - w.a.z) / len;
+    const along = (x - w.a.x) * ux + (z - w.a.z) * uz;
+    if (along >= 0 && along <= len) {
+      const nx = -uz, nz = ux, signed = (x - w.a.x) * nx + (z - w.a.z) * nz;
+      const reach = Math.max(...corners({ ...o, x, z }).map(c => Math.abs((c.x - x) * nx + (c.z - z) * nz)));
+      const target = Math.sign(signed || 1) * (reach + w.thickness / 2);
+      if (Math.abs(signed - target) < 0.15) { x += (target - signed) * nx; z += (target - signed) * nz; }
+    }
     if (
       Math.abs(w.a.x - w.b.x) < 0.001 &&
       z >= Math.min(w.a.z, w.b.z) &&

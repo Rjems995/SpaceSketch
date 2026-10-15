@@ -138,6 +138,7 @@ export const useEditor = create<State>((set, get) => ({
     get().edit((p) => {
       p.furniture = p.furniture.filter((o) => !ids.includes(o.id) || o.locked);
       p.walls = p.walls.filter((w) => !ids.includes(w.id));
+      p.surfaces = p.surfaces.filter(o => !ids.includes(o.id));
       p.measurements = p.measurements.filter((m) => !ids.includes(m.id));
       p.openings = p.openings.filter(
         (o) => !ids.includes(o.id) && p.walls.some((w) => w.id === o.wallId),

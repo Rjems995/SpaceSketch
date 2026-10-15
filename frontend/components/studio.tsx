@@ -39,7 +39,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "motion/react";
-import { catalog, Furniture, Project, template } from "@/lib/model";
+import { catalog, Furniture, Project, template, surfaceKinds } from "@/lib/model";
 import { area, corners, format, overlap, wallCorners } from "@/lib/geometry";
 import { useEditor } from "@/stores/editor";
 import {
@@ -88,10 +88,12 @@ const templates = [
 ];
 export default function Studio({ projectId }: { projectId?: string } = {}) {
   const [previews, setPreviews] = useState<PreviewImages>({});
+  const [propertiesCollapsed, setPropertiesCollapsed] = useState(false);
   const router = useRouter();
   const [missing, setMissing] = useState(false);
   const [sharing, setSharing] = useState(false);
   const s = useEditor();
+  useEffect(() => setPropertiesCollapsed(false), [s.selected]);
   const [projects, setProjects] = useState<Project[]>([]),
     [ready, setReady] = useState(false),
     [query, setQuery] = useState(""),
@@ -239,7 +241,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
           15,
           26,
         );
-        const pts = p.walls.flatMap((w) => [w.a, w.b]);
+        const pts = [...p.walls.flatMap((w) => [w.a, w.b]), ...p.surfaces.flatMap(o => corners(o))];
         const minX = Math.min(0, ...pts.map((q) => q.x)),
           minZ = Math.min(0, ...pts.map((q) => q.z)),
           maxX = Math.max(7, ...pts.map((q) => q.x)),
@@ -247,6 +249,12 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
         const scale = Math.min(250 / (maxX - minX), 145 / (maxZ - minZ)),
           x = (v: number) => 20 + (v - minX) * scale,
           y = (v: number) => 45 + (v - minZ) * scale;
+        p.surfaces.forEach(o => {
+          const boundary = corners(o); doc.setDrawColor(o.color); doc.setLineWidth(0.5);
+          boundary.forEach((q, i) => doc.line(x(q.x), y(q.z), x(boundary[(i + 1) % 4].x), y(boundary[(i + 1) % 4].z)));
+          doc.setFontSize(8); doc.text(o.name, x(o.x), y(o.z));
+        });
+        doc.setDrawColor("#444444");
         p.walls.forEach((w) => {
           doc.setLineWidth(w.thickness * scale);
           doc.line(x(w.a.x), y(w.a.z), x(w.b.x), y(w.b.z));
@@ -292,6 +300,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
   const wall = p?.walls.find((o) => o.id === s.selected[0]);
   const room = p?.rooms.find((o) => o.id === s.selected[0]);
   const opening = p?.openings.find((o) => o.id === s.selected[0]);
+  const surface = p?.surfaces.find(o => o.id === s.selected[0]);
   const overlapWarning =
     obj &&
     obj.kind !== "rug" &&
@@ -868,6 +877,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                         </button>
                       ))}
                   </div>
+                  {category === "Outdoor" && <div className="build-tools"><h3>Outdoor surfaces</h3><p>Choose a surface, then tap two opposite corners in 2D.</p>{surfaceKinds.map(kind => <button key={kind} onClick={() => { useEditor.setState({ tool: `surface:${kind}`, view: "2d" }); setSidebar(false); }}>Draw {kind}</button>)}</div>}
                   <p className="library-tip">
                     Click to add · Drag into the 2D floor plan
                   </p>
@@ -905,6 +915,9 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                     Room and wall tools: click a start point, then an end point.
                     Select walls to move their endpoints.
                   </p>
+                  <h3>Outdoor surfaces</h3>
+                  {surfaceKinds.map(kind => <button key={kind} className={s.tool === `surface:${kind}` ? "active" : ""} onClick={() => { useEditor.setState({ tool: `surface:${kind}`, view: "2d" }); setSidebar(false); }}>Draw {kind}</button>)}
+                  <p>Tap two opposite corners. Edit size, elevation, and terrain slope in Properties.</p>
                 </div>
               ) : tab === "Materials" ? (
                 <div className="material-library">
@@ -1069,7 +1082,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
               )}
             </section>
             <aside
-              className={`properties ${s.selected.length ? "has-selection" : ""}`}
+              className={`properties ${s.selected.length ? "has-selection" : ""} ${propertiesCollapsed ? "is-collapsed" : ""}`}
             >
               <div className="panel-heading">
                 <div>
@@ -1083,12 +1096,12 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                           ? "Room properties"
                           : opening
                             ? "Opening properties"
-                            : "Your design"}
+                            : surface ? "Surface properties" : "Your design"}
                   </h2>
                 </div>
                 {s.selected.length ? (
-                  <button title="Close properties" onClick={() => s.select("")}>
-                    <X size={17} />
+                  <button title={propertiesCollapsed ? "Expand properties" : "Collapse properties"} aria-expanded={!propertiesCollapsed} onClick={() => setPropertiesCollapsed(v => !v)}>
+                    <ChevronDown size={17} style={{ transform: propertiesCollapsed ? "rotate(180deg)" : undefined }} />
                   </button>
                 ) : (
                   <Settings2 size={17} />
@@ -1524,9 +1537,23 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                       Edit connected wall endpoints in 2D to reshape this room.
                     </p>
                   </>
+                ) : surface ? (
+                  <>
+                    <h3>{surface.kind} surface</h3>
+                    <label>Surface name<input value={surface.name} onChange={e => s.edit(p => { p.surfaces.find(v => v.id === surface.id)!.name = e.target.value; })} /></label>
+                    {(["x", "z", "width", "depth", "elevation", "rotation", ...(surface.kind === "terrain" ? ["slope" as const] : [])] as const).map(key => <label key={key}>{key === "slope" ? "Slope rise (m)" : `${key} ${key === "rotation" ? "(degrees)" : "(m)"}`}
+                      <input type="number" step={key === "rotation" ? 15 : 0.1} value={surface[key]} onChange={e => { if (e.target.value !== "") s.edit(p => { p.surfaces.find(v => v.id === surface.id)![key] = Number(e.target.value); }); }} />
+                    </label>)}
+                    <label>Surface color<input type="color" value={surface.color} onChange={e => s.edit(p => { p.surfaces.find(v => v.id === surface.id)!.color = e.target.value; })} /></label>
+                    <button className="danger" onClick={s.remove}>Delete surface</button>
+                  </>
                 ) : opening ? (
                   <>
                     <h3>{opening.kind === "window" ? "Window" : "Door"} dimensions</h3>
+                    <label>Opening style<select value={opening.style ?? "classic"} onChange={e => s.edit(p => { p.openings.find(o => o.id === opening.id)!.style = e.target.value as "classic" | "sliding" | "double"; })}>
+                      <option value="classic">Classic</option><option value="sliding">Sliding</option><option value="double">Double</option>
+                    </select></label>
+                    <p>Drag the opening along its wall, or use Move, Width, and Height handles. Blue labels show clearances.</p>
                     {(["width", "height", "sill", "offset"] as const).map(key => (
                       <label key={key}>
                         {key === "offset" ? "Position along wall (%)" : `${key} (m)`}

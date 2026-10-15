@@ -701,6 +701,18 @@ footer span {
 .wall-handle strong { display: block; font-size: 11px; white-space: nowrap; }
 .wall-handle-height { border-color: #52754d; color: #375932; }
 .wall-handle:focus-visible { outline: 3px solid #3f79a7; outline-offset: 2px; }
+.opening-handles .wall-handle { border-color: #40869b; color: #23586b; }
+.properties.is-collapsed .property-body { display: none; }
+.properties.is-collapsed { align-self: flex-start; height: auto; }
+.camera-actions { position: absolute; right: 12px; bottom: 65px; z-index: 3; display: flex; flex-wrap: wrap; max-width: calc(100% - 24px); padding: 3px; gap: 2px; background: #fffdf5eb; border: 1px solid #d4d5c7; border-radius: 10px; }
+.camera-actions button { min-width: 36px; min-height: 40px; display: grid; place-items: center; border-radius: 6px; }
+.camera-actions button:hover { background: #e3e7d9; }
+@media (pointer: coarse) {
+  .camera-actions button, .panel-heading button, .floating-tools button, .view-switch button { min-width: 44px; min-height: 44px; }
+  .property-body input, .property-body select, .property-body button, .build-tools button { min-height: 44px; }
+  .wall-handle { min-width: 48px; min-height: 48px; }
+  .camera-actions { max-width: 156px; }
+}
 
 .workspace {
   position: relative;
