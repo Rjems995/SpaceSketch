@@ -1,135 +1,187 @@
+<p align="center">
+  <img src="frontend/public/spacesketch-logo.png" alt="SpaceSketch" width="300" />
+</p>
+
 # SpaceSketch
 
-A local-first interior design application built with Next.js App Router, React, TypeScript, React Three Fiber, Three.js, React Konva, and Zustand. A single validated project document drives both the floor plan and the live 3D scene.
+Design interior and outdoor spaces with a connected **2D floor plan and 3D editor**. Draw rooms, resize walls, place furniture, edit windows and doors, and add outdoor surfaces.
 
-## Run locally
+SpaceSketch works locally without an account. Supabase provides optional authentication, cloud storage for projects, version history, and shared viewing.
 
-Use Node.js 22.12+ (Node 24 was used for development).
+## Quick start
+
+Prerequisites: Node.js 22.12 or newer, npm, and a browser with WebGL support for 3D editing. Development has been verified with Node.js 24.
+
+From the repository root:
 
 ```sh
 npm run setup
 npm run dev
 ```
 
-These commands run from the repository root. `setup` installs the locked dependencies in `frontend/`; the other root scripts forward to that package. You can also run `npm ci` and `npm run dev` directly inside `frontend/`.
+Open [localhost:3000](http://localhost:3000). No environment variables are required for local demo mode.
 
-Open http://localhost:3000. No credentials are necessary for local demo mode. On Windows PowerShell, use `npm.cmd` if script execution policies block `npm.ps1`. If the npm shim hangs, use `node "C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js" run dev`.
+`npm run setup` installs the locked dependencies in `frontend/`. Root scripts forward to that package. You can also run `npm ci` and `npm run dev` directly from `frontend/`.
 
-```sh
-npm run typecheck
-npm run lint
-npm test
-npm run test:e2e
-npm run build
-npm start
-```
+On Windows PowerShell, use `npm.cmd` if execution policy blocks `npm.ps1`.
 
-Playwright uses installed Google Chrome (`channel: 'chrome'`). Change the channel or install Playwright Chromium if Chrome is unavailable. The test runner starts and stops its own local Next.js server.
+## Features
 
-## Implemented interactions
+### Rooms, walls, and openings
 
-- Project dashboard: create, open, rename, duplicate, confirm deletion, search, recent sorting, and geometry-derived previews.
-- Seven editable starter presets, including a two-room studio apartment; twenty-eight procedural furniture types with original geometry and no remote asset dependencies.
-- 2D: rectangular and custom polygon rooms, wall segments, connected endpoint editing, room resizing, wall splitting, doors/windows, saved measurement annotations, zoom, pan, adjustable grid snapping, wall endpoint snapping, furniture alignment and wall-edge snapping.
-- Rooms support naming, type assignment, hide/show and deletion; walls shared with another room are preserved. Partial shared edges and crossing/T junctions are split into unique segments, attached openings retain their world positions, and split endpoints are inserted into connected floor boundaries. Junctions that would cut an opening are rejected.
-- Outdoor surfaces: draw rectangular patios, grass, paths, pools, and terrain in Build or Furniture > Outdoor. Edit dimensions, position, rotation, color, and elevation; terrain also supports a linear slope. Surfaces are saved in JSON and included in PDF/GLB exports. These are design surfaces, not terrain excavation or a sculpting system.
-- Opening editing: drag doors/windows along their wall or use Move, Width, and Height handles in 2D/3D. Choose classic, sliding, or double frames. Live previews retain the last valid non-overlapping geometry, support Escape cancellation, and commit one undo step.
-- Placement guides: 2D wall endpoint alignment, furniture center/edge snapping, angled wall snapping, opening center/grid snapping, and visible alignment/spacing labels. The grid snapping toggle controls alignment assistance.
-- Outdoor collection: garden bench, sun lounger, patio umbrella, pergola, raised planter, tree, hedge, fence, and barbecue; additional indoor ottoman, bedside table, and dining table. Wall properties expose connected endpoint coordinates; door/window properties expose width, height, sill, and position with fit and overlap validation.
-- Live wall handles attach to both endpoints and the top in 3D, and endpoints plus a height handle in 2D. Geometry previews during dragging, connected boundaries follow, Escape cancels, and release creates one undo step. Intermediate previews are excluded from autosave. Invalid geometry stays at the last valid preview.
-- Catalog cards render miniature 3D previews of all 28 models through one shared renderer. Models include rounded furniture edges, sofa cushions, slatted benches, angled loungers, drawer fronts, and shelf contents; icons remain as loading/WebGL fallbacks.
-- Furniture: click or drag from library into 2D, select, move, resize, rotate, duplicate, lock, delete, multi-select and group drag; precise property inputs update both canvases. Selected 3D objects expose move/rotate/scale gizmos.
-- Import self-contained GLB 2.0 or glTF files (up to 2.9 MB), record license/attribution, preserve embedded model data in JSON backups, and normalize model pivots. Models referencing external URLs are rejected.
-- 3D: generated floors and walls with actual openings; procedural furniture; orbit/pan/zoom; six camera presets; isometric cutaway; ceiling visibility; daylight/evening, sun direction, lamp lights, shadows, and three quality levels.
-- Walkthrough: click to capture the pointer, WASD movement, mouse look, furniture/wall collisions, and passable door openings. Escape releases the pointer; the toolbar exits walkthrough.
-- Floor finishes: procedural wood, tile, concrete and carpet textures with scale and rotation. Furniture/walls support color; furniture also supports roughness and metalness.
-- Measurements use meters internally, with m/cm/ft/in display. Area uses polygon geometry. Collision warnings use rotated furniture bounds and wall thickness.
-- Undo/redo, 900 ms debounced local autosave, tab-local interrupted-session recovery, local revision conflict detection, JSON validation, and import size limits. Individual projects have `/editor/[projectId]` URLs that reopen on refresh.
-- Export JSON, vector PDF floor plans, PNG/JPEG views, and GLB design geometry. Image/GLB export requires a visible 3D canvas. GLB restores full wall height and omits viewport rendering helpers.
-- Responsive dashboard, collapsible mobile library, selection-preserving collapsible properties, larger touch targets, 2D pinch zoom/two-finger pan, and 3D zoom/orbit/pan/reset buttons.
-- User-entered budget totals; these are estimates with no supplier pricing feed.
-- Supabase integration code: email/password sign-in, registration, password reset, logout, cloud save/load, optimistic cloud revisions, retained versions, read-only links, and revocation.
+- Seven starter layouts, including a two-room studio apartment.
+- Rectangular and polygon rooms, connected walls, wall splitting, room resizing, and visibility controls.
+- Live wall resizing with handles at both endpoints and the top in 3D; endpoint and height controls in 2D. Connected room boundaries follow the changes.
+- Draggable windows and doors with width, height, sill, and position controls. Choose classic, sliding, or double styles.
+- Opening fit and overlap validation. Live handle previews keep the last valid geometry, support Escape cancellation, and commit one undo step on release.
+- 2D alignment guides, furniture center/edge snapping, wall-edge snapping, opening positioning assistance, and spacing labels.
 
-## Editor controls
+### Furniture and materials
 
-Choose **Build** to draw. Click two points to create a rectangular room/wall or measure a distance. For custom polygon rooms, click corners and click the first point again to close the boundary. Select a wall to drag endpoints or edit thickness/height; endpoints shared by other walls and room polygons move together. Click a wall with the Door or Window tool to add an opening. Opening overlap and invalid room boundaries are rejected.
+- **28 furniture types** with rendered 3D catalog thumbnails and icon fallbacks.
+- Indoor pieces plus garden benches, loungers, umbrellas, pergolas, planters, trees, hedges, fences, and a barbecue.
+- Move, resize, rotate, duplicate, lock, delete, and group-drag furniture. Use transform gizmos in 3D or precise property inputs.
+- Procedural wood, tile, concrete, and carpet finishes; color and material controls.
+- Import self-contained GLB/glTF models with license and attribution information. External model dependencies are not supported.
 
-Choose **Furniture** to add a piece or import a model. In 2D, drag it to move, use selection handles to resize/rotate, and Shift-click for multiple selection. Edits are made through one store; 3D never maintains a separate geometry copy. In 3D, select an object and choose Move, Rotate, or Scale in the properties panel to control the gizmo. Imported meshes retain source colors with a white default tint; color tint, roughness, and metalness can be edited.
+### Outdoor design
+
+Draw rectangular **patios, grass, paths, pools, and terrain** from **Build** or **Furniture → Outdoor**. Edit size, position, rotation, color, and elevation. Terrain patches also support a linear slope.
+
+These are editable design surfaces. Terrain sculpting, excavation, and pool simulation are not implemented.
+
+### Viewing and interaction
+
+- 2D, 3D, and split views; six camera presets and an isometric wall cutaway.
+- Day/evening lighting, sun direction, lamp lights, shadows, ceiling visibility, and quality settings.
+- Desktop walkthrough with WASD movement and pointer-lock mouse look.
+- Mobile touch targets, collapsible library and properties panels, 2D pinch zoom/pan, and 3D zoom/orbit/pan/reset buttons.
+- Measurements in meters, centimeters, feet, or inches; user-entered budget estimates.
+
+### Saving and sharing
+
+- Local autosave, interrupted-session recovery, revision checks, and up to 100 undo steps.
+- Export JSON backups, PDF floor plans, PNG/JPEG views, and GLB geometry. Image and GLB exports require a visible 3D view.
+- Optional Supabase sign-in, cloud save/load, historical versions, and revocable read-only sharing links.
+
+## Editor guide
+
+| Task | How |
+| --- | --- |
+| Draw a room or wall | Open **Build**, choose a tool, then tap a start and end point. For a polygon, tap its corners and return to the first point. |
+| Resize a wall | Select it and drag the endpoint or height arrows. Geometry updates live; release to commit. |
+| Add a door or window | Choose **Add door** or **Add window**, then tap a wall. |
+| Edit an opening | Drag it along its wall in 2D, or use the Move, Width, and Height handles in either view. Choose its style in Properties. |
+| Add furniture | Click a catalog card or drag it into the 2D plan. Select it to adjust dimensions and materials. |
+| Add an outdoor surface | Choose **Draw patio/grass/path/pool/terrain**, then tap two opposite corners. |
+| Use alignment guides | Enable snapping in the bottom toolbar; guides appear during supported 2D placement interactions. |
+| Make space on mobile | Collapse Properties using its heading button; the object stays selected. |
+| Navigate 3D | Orbit, pan, and zoom with gestures or the camera buttons. Use **Reset camera** to return to the overview. |
 
 | Shortcut | Action |
 | --- | --- |
 | Ctrl/Cmd+Z | Undo |
 | Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y | Redo |
-| Ctrl/Cmd+D | Duplicate selection |
+| Ctrl/Cmd+D | Duplicate selected furniture |
 | Ctrl/Cmd+S | Save |
-| Delete | Delete selection (locked furniture is preserved) |
-| Escape | Cancel drawing, release selection, exit presentation/walkthrough |
+| Delete | Delete selection; locked furniture is preserved |
+| Escape | Cancel drawing or a handle preview; release selection or exit presentation/walkthrough as applicable |
 
-Local projects live in `localStorage` under `spacesketch-projects-v1`. Export JSON backups before clearing browser data. A different browser/profile does not share local projects.
+Local projects are stored in the current browser under `spacesketch-projects-v1`. Export JSON backups before clearing browser data. Local projects do not automatically appear in another browser or device.
 
-## Supabase setup
-
-1. Create a Supabase project.
-2. Run `backend/supabase/migrations/001_initial.sql` in its SQL editor. This creates profiles, projects, versions, assets, shares, a private storage bucket, indexes, RLS policies, and transaction-safe RPCs.
-3. Copy `frontend/.env.example` to `frontend/.env.local` and set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` using the project's public browser credentials. Never put a service-role key into this application.
-4. Enable email/password authentication. Set the Site URL to your deployment URL and allow `http://localhost:3000/reset-password` and your production `/reset-password` URL as redirect URLs.
-5. Restart Next.js. Open the account button to register/sign in. Save a project to sync it; use **Load cloud projects** on another device.
-6. Use **Share** to create a read-only URL, revoke existing links, or load and restore a historical cloud revision.
-
-Cloud writes execute through `save_project`. Its transaction checks the authenticated owner and the exact last observed cloud revision, snapshots the previous data, and retains the latest 50 historical versions. Direct project writes have no insert/update RLS policy. Read/delete policies restrict access to the owner. Public shared reads require an unguessable UUID token through a restricted RPC; revocation deletes that token. Anyone holding a live token can read the project data.
-
-The SQL migration and live authentication/authorization/sharing flows **have not been executed against a real Supabase project in this workspace** because credentials were not supplied. Before production, test two separate users, stale concurrent saves, revoked links, account recovery, and storage access against your configured instance. The SQL payload guard enforces size/collection limits but does not duplicate every Zod geometry constraint server-side.
-
-## Architecture
+## Repository structure
 
 ```text
-frontend/
-  app/                      Next.js routes, password recovery, shared viewer
-  components/               Dashboard, Konva editor, Three.js scene and UI
-  stores/editor.ts          Canonical document, selection and edit history
-  lib/                      Geometry, topology, models, materials and persistence
-  lib/supabase.ts           Browser client for authenticated backend operations
-  public/                   Frontend assets
-  tests/                    Vitest unit tests and Playwright workflows
-  .env.example              Public frontend configuration template
-  package.json              Frontend dependencies and commands
-backend/
-  supabase/migrations/      Database schema, RPCs, RLS and storage policies
-  README.md                 Supabase backend configuration
-package.json                Convenience scripts that run the frontend package
+SpaceSketch/
+├── frontend/
+│   ├── app/                    Next.js routes and styles
+│   ├── components/             Editor, 2D/3D views, controls, and previews
+│   ├── lib/                    Models, geometry, placement, and persistence
+│   ├── stores/editor.ts        Project state, live previews, and undo history
+│   ├── public/                 Logo and other static assets
+│   ├── tests/                  Unit and browser tests
+│   ├── .env.example            Public Supabase configuration template
+│   └── package.json            Application dependencies and scripts
+├── backend/
+│   └── supabase/migrations/    Database schema, functions, and access policies
+├── package.json                Root command shortcuts
+└── README.md
 ```
 
-The backend is hosted by Supabase. Its configuration and database code are separated from the frontend; the frontend keeps the client that calls it. See [frontend setup](frontend/README.md) and [backend setup](backend/README.md).
+The frontend uses Next.js, React, TypeScript, React Three Fiber/Three.js, React Konva, Zustand, and Zod. One project document drives both views; temporary drag previews are kept out of saved data. Coordinates use X/Z for the floor plane and Y for height, with dimensions stored in meters.
 
-Coordinates use X/Z on the floor plane and Y for height. 2D screen Y maps to world Z. Object dimensions are meters; rotation is stored in degrees, converted at the 3D boundary. Drag/resize interactions commit one document update at the end, producing one history entry. History is limited to 100 edits.
+The backend runs on Supabase; there is no separate Node.js backend server to start. The browser client stays in `frontend/lib/supabase.ts`.
 
-## Verification
+See the [frontend README](frontend/README.md) and [backend README](backend/README.md) for folder-specific setup.
 
-The 37 unit tests cover coordinate conversion, wall lengths, concave polygon area, invalid polygons, rotated collisions, snapping, opening references/remapping, shared wall normalization, room resizing/splitting/visibility/deletion, asset URL validation, serialization, undo/redo and saved revision preservation, locked deletion, recovery, and local/cloud merge behavior. Nine browser tests exercise drawing an actual room, furniture drag and undo, editing/materials/persistence/JSON, model import and provenance, real PNG/PDF/GLB downloads, direct editor URL reload, live 3D, and the mobile viewport. Browser screenshots are written into ignored `test-results/`.
+## Optional Supabase setup
 
-The initial dependency audit exposed critical advisories in jsPDF and Vitest; these were upgraded to patched versions. Five high-severity development-tool advisories remain in the `eslint-config-next` → `fast-glob` → `micromatch` → `braces` chain. `npm audit --omit=dev` reports zero production dependency vulnerabilities. Do not apply an automatic forced downgrade of the Next.js lint configuration without testing compatibility.
+1. Create a Supabase project and run [001_initial.sql](backend/supabase/migrations/001_initial.sql) in its SQL editor.
+2. Enable email/password authentication.
+3. Copy `frontend/.env.example` to `frontend/.env.local` and fill in the public credentials:
 
-## Deployment to Vercel
+   ```dotenv
+   NEXT_PUBLIC_SUPABASE_URL=your-project-url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-public-anon-key
+   ```
 
-1. Push this directory to a Git repository and import it into Vercel.
-2. Set **Root Directory** to `frontend`. Select the Next.js preset, Node.js 22 or 24, install command `npm ci`, and build command `npm run build`.
-3. Set the two public Supabase variables for the relevant environments if cloud features are desired. Without them, the deployment remains a functional browser-local demo.
-4. Apply the database migration and add Vercel's production URL to Supabase Auth's Site URL/redirect allowlist.
-5. Deploy, then verify a fresh account, owner isolation, cloud reload, export, shared viewing, and revocation.
+4. Set the Auth Site URL to your frontend URL. Allow `http://localhost:3000/reset-password` and the production `/reset-password` URL for password recovery.
+5. Restart the frontend, open the account menu, and sign in. Save to sync a project, use **Load cloud projects** on another device, and use **Share** to manage links and versions.
 
-No hosted deployment was created as part of local development.
+Only public browser credentials belong in these variables. Do not expose a service-role key.
 
-## Scope and remaining limitations
+The backend uses row-level security and database functions for ownership checks, optimistic revision checks, version history, and shared reads. Anyone with an active sharing token can read that project; revoking the link removes its token.
 
-This is a functional portfolio application, **not a fully completed production CAD platform**. The original brief is broader than the current implementation:
+**Live Supabase integration has not been verified against a configured project in this workspace.** Before deployment, verify authentication, owner isolation, concurrent saves, version restoration, sharing/revocation, and storage permissions. The SQL validation does not duplicate every client-side geometry constraint.
 
-- Standalone wall loops do not automatically become floor polygons; use the custom polygon room tool. Shared boundaries are normalized, but overlapping room floors are not automatically merged and should be avoided when drawing.
-- Multiple floors, viewport rulers, a full constraint solver and automatic placement suggestions remain unimplemented. Collision warnings do not universally prevent overlaps.
-- Walkthrough has adjustable speed, a default eye height of 1.65 m, and 2D collision proxies. It is intended for desktop pointer-lock input.
-- Licensed remote model catalogs, separate-file glTF dependencies, user texture upload, wallpaper/brick, spotlights, and postprocessing AO are not implemented. Embedded imported models count toward the 5 MB project cap and browser storage quota. Source colors are retained for imported models.
-- The studio preset has living and bedroom spaces; it is not a fully furnished multi-room house. Furniture categories are a starter subset of the requested catalog.
-- The mobile editor supports basic interaction, but precision drawing is best on desktop. Accessibility and cross-browser/device coverage need a broader audit.
-- Cloud rename and deletion are wired to authenticated operations. Protected account-only route UX, separate cloud asset uploads, automatic network retry queues, and complete server-side geometry validation need hardening. All cloud operations still require verification against a configured Supabase instance. Loading newer cloud data retains a local recovery copy before replacing a local project.
-- No AI design service, real-time collaboration, commercial pricing, photorealistic rendering, or automated deployment is included. TanStack Query handles version queries and React Hook Form validates password recovery. The optional postprocessing dependency is installed but no AO pass is enabled.
+## Commands and verification
 
-All furniture and procedural textures were authored for this application. No third-party furniture meshes or downloaded image assets are bundled.
+Run these from the repository root:
+
+| Command | Purpose |
+| --- | --- |
+| `npm run setup` | Install frontend dependencies from the lockfile |
+| `npm run dev` | Start the development server |
+| `npm run typecheck` | Check TypeScript |
+| `npm run lint` | Run ESLint |
+| `npm test` | Run unit tests |
+| `npm run test:e2e` | Run Playwright browser tests |
+| `npm run build` | Build for production |
+| `npm start` | Serve the production build; run build first |
+
+The last verified feature update passed the production build, lint, **37 unit tests**, and **9 browser tests**. Coverage includes geometry, snapping, schema compatibility, live previews and undo, opening edits, outdoor surfaces, persistence, imports/exports, catalog thumbnails, and mobile controls.
+
+Playwright is configured to use installed **Google Chrome**. It starts a local development server when needed and can reuse an existing one. Screenshots and failure artifacts are written to `frontend/test-results/`, which Git ignores.
+
+Dependency audit results change over time. To inspect the current frontend dependencies, run:
+
+```sh
+npm --prefix frontend audit
+npm --prefix frontend audit --omit=dev
+```
+
+## Deployment
+
+For a Vercel deployment, use these project settings:
+
+| Setting | Value |
+| --- | --- |
+| Root directory | `frontend` |
+| Framework | Next.js |
+| Install command | `npm ci` |
+| Build command | `npm run build` |
+
+Use a Node.js version compatible with the local setup. Configure the two public Supabase variables if cloud features are needed, apply the migration, and add the deployed URL to the Supabase authentication settings. Without Supabase configuration, the app runs in local demo mode.
+
+## Current limitations
+
+- No multiple floors, full constraint solver, viewport rulers, or automatic placement suggestions.
+- Standalone wall loops do not automatically create floors. Use the polygon room tool; overlapping room floors are not merged automatically.
+- Collision warnings do not prevent every overlap. Walkthrough uses simplified collision geometry and is intended for desktop use.
+- Outdoor surfaces are rectangular; terrain supports a linear slope rather than freeform sculpting. Walkthrough does not simulate terrain or water physics.
+- Imported models must be self-contained and no larger than 2.9 MB. Embedded assets count toward the 5 MB project limit and browser storage quota.
+- Cloud asset uploads, automatic retry queues, and complete server-side geometry validation need further work. Cloud features require live integration testing.
+- No real-time collaboration, AI design service, supplier pricing, or photorealistic rendering. Budget totals use prices entered by the user.
+- Broader accessibility, browser, and device testing is still needed.
+
+Built-in furniture geometry and procedural textures are authored in the project. The SpaceSketch logo is supplied by the project owner; imported models retain user-provided license and attribution information.

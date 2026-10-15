@@ -27,4 +27,4 @@ Supabase runs the backend services; this folder does not need a separate Node.js
 - Read-only links resolve through `view_shared_project`. Deleting a sharing token revokes the link.
 - Storage policies restrict objects to the authenticated user's path in the private bucket.
 
-This folder move does not change deployed database resources. Live backend checks still require a configured Supabase project: verify separate-user isolation, stale saves, authentication recovery, sharing/revocation, and storage permissions before production use. See the [main README](../README.md) for the remaining validation limitations.
+Live backend checks still require a configured Supabase project: verify separate-user isolation, stale saves, authentication recovery, sharing/revocation, and storage permissions before production use. See the [main README](../README.md) for the remaining validation limitations.
