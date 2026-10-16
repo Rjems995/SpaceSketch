@@ -146,6 +146,7 @@ Run these from the repository root:
 | `npm run lint` | Run ESLint |
 | `npm test` | Run unit tests |
 | `npm run test:e2e` | Run Playwright browser tests |
+| `npm run test:cloud` | Verify a configured Supabase backend with two dedicated test accounts; see [backend setup](backend/README.md#live-cloud-verification) |
 | `npm run build` | Build for production |
 | `npm start` | Serve the production build; run build first |
 

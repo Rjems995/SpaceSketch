@@ -27,4 +27,26 @@ Supabase runs the backend services; this folder does not need a separate Node.js
 - Read-only links resolve through `view_shared_project`. Deleting a sharing token revokes the link.
 - Storage policies restrict objects to the authenticated user's path in the private bucket.
 
+## Live cloud verification
+
+Apply the migration and configure `frontend/.env.local` first. Create two distinct, confirmed test accounts in that Supabase project, then copy [`.env.test.example`](.env.test.example) to `backend/.env.test.local` and fill in their credentials. This local file is ignored by Git; do not use service-role credentials.
+
+From the repository root, run:
+
+```sh
+npm run test:cloud
+```
+
+The verifier uses the public key and independent authenticated clients to test:
+
+- Owner save/load through two independent sessions, representing separate devices.
+- Cross-account and anonymous read/write/delete restrictions.
+- Direct-update protection, stale revisions, and concurrent saves.
+- Owner-only history and restoring a snapshot as a new revision.
+- Public read-only sharing, latest-version visibility, and link revocation.
+
+It creates a new, randomly identified test project and deletes only that project's data afterward. It does not create users, change the schema, or modify existing projects. A failed cleanup prints the test project ID for manual removal. Missing configuration exits with code 2; failed checks exit with code 1. A passing run exits with code 0.
+
+This verifies the live backend API and session isolation. It does not replace browser/device testing of account switching, offline interruptions, or storage-bucket policies. Browser-local projects remain in the same browser storage regardless of the signed-in account; backend access policies are verified separately.
+
 Live backend checks still require a configured Supabase project: verify separate-user isolation, stale saves, authentication recovery, sharing/revocation, and storage permissions before production use. See the [main README](../README.md) for the remaining validation limitations.

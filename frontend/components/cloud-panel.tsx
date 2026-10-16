@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { X, Copy, Link, Trash2, History } from "lucide-react";
 import { toast } from "sonner";
@@ -21,12 +21,21 @@ export default function CloudPanel({
   const p = useEditor((s) => s.project)!;
   const [url, setUrl] = useState(""),
     [busy, setBusy] = useState(false);
+  const [accountId, setAccountId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!supabase) return;
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAccountId(session?.user.id ?? null);
+      setUrl("");
+    });
+    return () => data.subscription.unsubscribe();
+  }, []);
   const {
     data: versions = [],
     refetch,
     isFetching,
   } = useQuery({
-    queryKey: ["versions", p.id],
+    queryKey: ["versions", accountId, p.id],
     queryFn: () => projectVersions(p.id),
     enabled: false,
   });
@@ -115,6 +124,7 @@ export default function CloudPanel({
             </button>
             <button
               className="secondary"
+              disabled={!accountId || isFetching}
               onClick={async () => {
                 try {
                   const result = await refetch();
