@@ -1,7 +1,9 @@
 import { test, expect } from "@playwright/test";
 test.use({ hasTouch: true });
 
-test("adds outdoor items and edits a wall and window with persistence", async ({ page }) => {
+test("adds outdoor items and edits a wall and window with persistence", async ({
+  page,
+}) => {
   await page.goto("/");
   await page.getByRole("button", { name: "New project", exact: true }).click();
   await page.getByRole("button", { name: "2D", exact: true }).click();
@@ -9,15 +11,30 @@ test("adds outdoor items and edits a wall and window with persistence", async ({
   await page.getByRole("button", { name: "Garden bench" }).click();
   await page.getByRole("button", { name: "Patio umbrella" }).click();
   const bounds = (await page.locator("canvas").first().boundingBox())!;
-  const zoom = Math.max(15, Math.min(85, (bounds.width - 110) / 7, (bounds.height - 170) / 5));
+  const zoom = Math.max(
+    15,
+    Math.min(85, (bounds.width - 110) / 7, (bounds.height - 170) / 5),
+  );
   await page.touchscreen.tap(bounds.x + 65 + zoom, bounds.y + 95);
-  await expect(page.getByText("Wall dimensions", { exact: true })).toBeVisible();
-  const lengthArrow = page.getByRole("button", { name: "Drag wall length", exact: true });
+  await expect(
+    page.getByText("Wall dimensions", { exact: true }),
+  ).toBeVisible();
+  const lengthArrow = page.getByRole("button", {
+    name: "Drag wall length",
+    exact: true,
+  });
   await expect(lengthArrow).toBeVisible();
   const handle = (await lengthArrow.boundingBox())!;
-  await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
+  await page.mouse.move(
+    handle.x + handle.width / 2,
+    handle.y + handle.height / 2,
+  );
   await page.mouse.down();
-  await page.mouse.move(handle.x + handle.width / 2 + zoom, handle.y + handle.height / 2, { steps: 8 });
+  await page.mouse.move(
+    handle.x + handle.width / 2 + zoom,
+    handle.y + handle.height / 2,
+    { steps: 8 },
+  );
   await expect(lengthArrow).toContainText("8.00 m");
   await expect(page.getByLabel("End X (m)", { exact: true })).toHaveValue("7");
   await page.mouse.up();
@@ -25,15 +42,25 @@ test("adds outdoor items and edits a wall and window with persistence", async ({
   await page.getByTitle("Undo (Ctrl+Z)", { exact: true }).click();
   await expect(page.getByLabel("End X (m)", { exact: true })).toHaveValue("7");
   await page.getByRole("button", { name: "3D", exact: true }).click();
-  const heightArrow = page.getByRole("button", { name: "Drag wall height", exact: true });
+  const heightArrow = page.getByRole("button", {
+    name: "Drag wall height",
+    exact: true,
+  });
   await expect(heightArrow).toBeVisible({ timeout: 20000 });
   await heightArrow.focus();
   await page.keyboard.press("ArrowUp");
   await expect(heightArrow).toContainText("2.80 m");
   const heightHandle = (await heightArrow.boundingBox())!;
-  await page.mouse.move(heightHandle.x + heightHandle.width / 2, heightHandle.y + heightHandle.height / 2);
+  await page.mouse.move(
+    heightHandle.x + heightHandle.width / 2,
+    heightHandle.y + heightHandle.height / 2,
+  );
   await page.mouse.down();
-  await page.mouse.move(heightHandle.x + heightHandle.width / 2, heightHandle.y + heightHandle.height / 2 - 50, { steps: 8 });
+  await page.mouse.move(
+    heightHandle.x + heightHandle.width / 2,
+    heightHandle.y + heightHandle.height / 2 - 50,
+    { steps: 8 },
+  );
   await expect(heightArrow).not.toContainText("2.80 m");
   await page.screenshot({ path: "test-results/live-wall-resize.png" });
   await page.keyboard.press("Escape");
@@ -43,27 +70,47 @@ test("adds outdoor items and edits a wall and window with persistence", async ({
   await page.getByLabel("End X (m)", { exact: true }).fill("8");
   await page.getByRole("button", { name: "Add window", exact: true }).click();
   await page.mouse.click(bounds.x + 65 + zoom, bounds.y + 95);
-  await expect(page.getByText("Window dimensions", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Window dimensions", { exact: true }),
+  ).toBeVisible();
   await page.getByLabel("width (m)", { exact: true }).fill("1.6");
   await page.getByLabel("sill (m)", { exact: true }).fill("0.8");
   await page.getByTitle("Save project", { exact: true }).click();
-  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("spacesketch-projects-v1")!)[0]);
-  expect(saved.furniture.map((o: { kind: string }) => o.kind)).toEqual(["bench", "umbrella"]);
+  const saved = await page.evaluate(
+    () => JSON.parse(localStorage.getItem("spacesketch-projects-v1")!)[0],
+  );
+  expect(saved.furniture.map((o: { kind: string }) => o.kind)).toEqual([
+    "bench",
+    "umbrella",
+  ]);
   expect(saved.walls[0].b.x).toBe(8);
-  expect(saved.openings.at(-1)).toMatchObject({ kind: "window", width: 1.6, sill: 0.8 });
+  expect(saved.openings.at(-1)).toMatchObject({
+    kind: "window",
+    width: 1.6,
+    sill: 0.8,
+  });
   await page.reload();
   await expect(page.locator("canvas").first()).toBeVisible();
 });
 
 test("renders all catalog models as 3D thumbnails", async ({ page }) => {
   const errors: string[] = [];
-  page.on("pageerror", e => errors.push(e.message));
+  page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
   await page.getByRole("button", { name: "New project", exact: true }).click();
-  await expect(page.locator(".furniture-preview-image")).toHaveCount(28, { timeout: 30000 });
-  const images = await page.locator(".furniture-preview-image").evaluateAll(nodes => nodes.map(n => ({ loaded: (n as HTMLImageElement).naturalWidth > 0, src: (n as HTMLImageElement).src })));
-  expect(images.every(i => i.loaded)).toBe(true);
-  expect(new Set(images.map(i => i.src)).size).toBe(28);
+  await expect(page.locator(".furniture-preview-image")).toHaveCount(28, {
+    timeout: 30000,
+  });
+  const images = await page
+    .locator(".furniture-preview-image")
+    .evaluateAll((nodes) =>
+      nodes.map((n) => ({
+        loaded: (n as HTMLImageElement).naturalWidth > 0,
+        src: (n as HTMLImageElement).src,
+      })),
+    );
+  expect(images.every((i) => i.loaded)).toBe(true);
+  expect(new Set(images.map((i) => i.src)).size).toBe(28);
   await page.getByRole("button", { name: "Living", exact: true }).click();
   await page.screenshot({ path: "test-results/catalog-previews.png" });
   expect(errors).toEqual([]);

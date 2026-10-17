@@ -32,7 +32,9 @@ export default function ResetPassword() {
           setBusy(false);
         })}
       >
-        <Link href="/"><BrandLogo large /></Link>
+        <Link href="/">
+          <BrandLogo large />
+        </Link>
         <h2>Set a new password</h2>
         <label>
           New password

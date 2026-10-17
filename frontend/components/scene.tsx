@@ -11,16 +11,27 @@ import { useEffect, useMemo, useRef, useState, Suspense } from "react";
 import ImportedModel from "./imported-model";
 import { Box, FurnitureModel } from "./furniture-model";
 import RenderBoundary from "./render-boundary";
-import WallResizeControls, { WallHandlePositions } from "./wall-resize-controls";
+import WallResizeControls, {
+  WallHandlePositions,
+} from "./wall-resize-controls";
 import * as THREE from "three";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 import { Furniture, Project, Wall, Opening } from "@/lib/model";
 import OutdoorSurface from "./outdoor-surface";
 import OpeningControls from "./opening-controls";
-import { ZoomIn, ZoomOut, RotateCcw, RotateCw, MoveLeft, MoveRight, Home } from "lucide-react";
+import {
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  RotateCw,
+  MoveLeft,
+  MoveRight,
+  Home,
+} from "lucide-react";
 import { useEditor } from "@/stores/editor";
 import { corners, overlap } from "@/lib/geometry";
 import { download } from "@/lib/storage";
+import { placementChecks } from "@/lib/placement-checks";
 import { floorTexture } from "@/lib/materials";
 import { toast } from "sonner";
 import { visibleDesign } from "@/lib/rooms";
@@ -28,8 +39,10 @@ function EditableFurniture({
   o,
   walk,
   readOnly,
+  conflict,
 }: {
   o: Furniture;
+  conflict: boolean;
   walk: boolean;
   readOnly: boolean;
 }) {
@@ -58,10 +71,15 @@ function EditableFurniture({
         ) : (
           <FurnitureModel o={o} />
         )}{" "}
-        {selected && (
+        {(selected || conflict) && (
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.045, 0]}>
             <planeGeometry args={[o.width + 0.12, o.depth + 0.12]} />
-            <meshBasicMaterial color="#c4764f" transparent opacity={0.25} />
+            <meshBasicMaterial
+              color={conflict ? "#dc2626" : "#c4764f"}
+              transparent
+              opacity={0.5}
+              depthTest={false}
+            />
           </mesh>
         )}
       </group>
@@ -139,6 +157,10 @@ function SceneContent({
   readOnly: boolean;
 }) {
   const { camera, gl, scene } = useThree();
+  const conflicts = useMemo(
+    () => new Set(placementChecks(p).flatMap((issue) => issue.ids)),
+    [p],
+  );
   const keys = useRef(new Set<string>());
   const selected = useEditor((s) => s.selected);
   const select = useEditor((s) => s.select);
@@ -194,11 +216,31 @@ function SceneContent({
             `${p.name}.glb`,
           );
         } else {
-          gl.render(scene, camera);
-          gl.domElement.toBlob(
-            (b) => b && download(b, `${p.name}.${format}`),
-            format === "jpg" ? "image/jpeg" : "image/png",
-          );
+          const size = gl.getSize(new THREE.Vector2());
+          const ratio = gl.getPixelRatio();
+          try {
+            const width = Math.min(3840, gl.capabilities.maxTextureSize);
+            const height = Math.round((width * size.y) / size.x);
+            gl.setPixelRatio(1);
+            gl.setSize(width, height, false);
+            gl.render(scene, camera);
+            const blob = await new Promise<Blob>((resolve, reject) =>
+              gl.domElement.toBlob(
+                (b) =>
+                  b ? resolve(b) : reject(new Error("Image encoding failed")),
+                format === "jpg" ? "image/jpeg" : "image/png",
+                0.95,
+              ),
+            );
+            download(blob, p.name + "." + format);
+            toast.success(
+              "Image exported at " + width + " ? " + height + " pixels",
+            );
+          } finally {
+            gl.setPixelRatio(ratio);
+            gl.setSize(size.x, size.y, false);
+            gl.render(scene, camera);
+          }
         }
       } catch (error) {
         toast.error(`Export failed: ${(error as Error).message}`);
@@ -312,7 +354,16 @@ function SceneContent({
             </group>
           ),
       )}
-      {p.surfaces.map(o => <OutdoorSurface key={o.id} surface={o} selected={selected.includes(o.id)} onSelect={() => { if (!readOnly) select(o.id); }} />)}
+      {p.surfaces.map((o) => (
+        <OutdoorSurface
+          key={o.id}
+          surface={o}
+          selected={selected.includes(o.id)}
+          onSelect={() => {
+            if (!readOnly) select(o.id);
+          }}
+        />
+      ))}
       {visibleDesign(p).walls.map((w) => {
         const len = Math.hypot(w.b.x - w.a.x, w.b.z - w.a.z),
           openings = p.openings
@@ -363,7 +414,7 @@ function SceneContent({
               1,
               !walk &&
               !selected.includes(w.id) &&
-              !openings.some(o => selected.includes(o.id)) &&
+              !openings.some((o) => selected.includes(o.id)) &&
               !ceiling &&
               preset === "Isometric" &&
               ((w.a.x + w.b.x) / 2 >=
@@ -387,37 +438,90 @@ function SceneContent({
                 key={i}
                 position={[a.x, a.y, 0]}
                 size={[a.width, a.height, w.thickness]}
+                material={w.material}
                 color={selected.includes(w.id) ? "#a6b99e" : w.material.color}
               />
             ))}
             {openings.map((o) => (
-                <group key={o.id} position={[o.offset * len, o.sill, 0]} onClick={e => { e.stopPropagation(); if (!readOnly && !walk) select(o.id); }}>
-                <mesh
-                  key={o.id}
-                  position={[0, o.height / 2, 0]}
-                >
+              <group
+                key={o.id}
+                position={[o.offset * len, o.sill, 0]}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!readOnly && !walk) select(o.id);
+                }}
+              >
+                <mesh key={o.id} position={[0, o.height / 2, 0]}>
                   <boxGeometry args={[o.width, o.height, 0.025]} />
                   <meshPhysicalMaterial
-                    color={selected.includes(o.id) ? "#e4ae74" : o.kind === "window" || o.style === "sliding" ? "#bddae0" : "#b9926b"}
+                    color={
+                      conflicts.has(o.id) && !readOnly
+                        ? "#dc2626"
+                        : selected.includes(o.id)
+                          ? "#e4ae74"
+                          : o.kind === "window" || o.style === "sliding"
+                            ? "#bddae0"
+                            : "#b9926b"
+                    }
                     transparent={o.kind === "window" || o.style === "sliding"}
-                    opacity={o.kind === "window" || o.style === "sliding" ? 0.35 : 1}
+                    opacity={
+                      o.kind === "window" || o.style === "sliding" ? 0.35 : 1
+                    }
                     roughness={o.kind === "window" ? 0.1 : 0.7}
                   />
                 </mesh>
-                {[-1, 1].map(sign => <group key={sign}>
-                  <Box position={[sign * (o.width / 2 - 0.025), o.height / 2, 0]} size={[0.05, o.height, w.thickness + 0.02]} color="#eee9df" />
-                  <Box position={[0, sign === 1 ? o.height - 0.025 : 0.025, 0]} size={[o.width, 0.05, w.thickness + 0.02]} color="#eee9df" />
-                </group>)}
-                {(o.style === "double" || o.style === "sliding") && <Box position={[0, o.height / 2, 0.02]} size={[0.04, o.height, w.thickness + 0.025]} color={o.style === "sliding" ? "#4e5556" : "#eee9df"} />}
-                {o.kind === "window" && o.style !== "sliding" && <Box position={[0, o.height / 2, 0]} size={[o.width, 0.035, w.thickness + 0.02]} color="#eee9df" />}
-                {o.kind === "door" && <Box position={[o.style === "double" ? 0.08 : o.width * 0.35, o.height * 0.46, w.thickness / 2 + 0.03]} size={[0.1, 0.025, 0.045]} color="#4c4942" />}
-                </group>
-              ))}
+                {[-1, 1].map((sign) => (
+                  <group key={sign}>
+                    <Box
+                      position={[sign * (o.width / 2 - 0.025), o.height / 2, 0]}
+                      size={[0.05, o.height, w.thickness + 0.02]}
+                      color="#eee9df"
+                    />
+                    <Box
+                      position={[0, sign === 1 ? o.height - 0.025 : 0.025, 0]}
+                      size={[o.width, 0.05, w.thickness + 0.02]}
+                      color="#eee9df"
+                    />
+                  </group>
+                ))}
+                {(o.style === "double" || o.style === "sliding") && (
+                  <Box
+                    position={[0, o.height / 2, 0.02]}
+                    size={[0.04, o.height, w.thickness + 0.025]}
+                    color={o.style === "sliding" ? "#4e5556" : "#eee9df"}
+                  />
+                )}
+                {o.kind === "window" && o.style !== "sliding" && (
+                  <Box
+                    position={[0, o.height / 2, 0]}
+                    size={[o.width, 0.035, w.thickness + 0.02]}
+                    color="#eee9df"
+                  />
+                )}
+                {o.kind === "door" && (
+                  <Box
+                    position={[
+                      o.style === "double" ? 0.08 : o.width * 0.35,
+                      o.height * 0.46,
+                      w.thickness / 2 + 0.03,
+                    ]}
+                    size={[0.1, 0.025, 0.045]}
+                    color="#4c4942"
+                  />
+                )}
+              </group>
+            ))}
           </group>
         );
       })}
       {visibleDesign(p).furniture.map((o) => (
-        <EditableFurniture key={o.id} o={o} walk={walk} readOnly={readOnly} />
+        <EditableFurniture
+          key={o.id}
+          o={o}
+          walk={walk}
+          readOnly={readOnly}
+          conflict={!readOnly && conflicts.has(o.id)}
+        />
       ))}
       {quality === "High" && (
         <ContactShadows
@@ -457,43 +561,106 @@ function SceneContent({
 function CameraActions() {
   const { camera, controls, invalidate } = useThree();
   useEffect(() => {
-    const orbit = controls as unknown as { target: THREE.Vector3; update: () => void } | null;
+    const orbit = controls as unknown as {
+      target: THREE.Vector3;
+      update: () => void;
+    } | null;
     const act = (event: Event) => {
       if (!orbit) return;
       const action = (event as CustomEvent<string>).detail;
       const offset = camera.position.clone().sub(orbit.target);
-      if (action === "in" || action === "out") camera.position.copy(orbit.target).add(offset.setLength(Math.max(2, Math.min(45, offset.length() * (action === "in" ? 0.8 : 1.25)))));
-      if (action === "left" || action === "right") camera.position.copy(orbit.target).add(offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), action === "left" ? 0.2 : -0.2));
-      if (action === "pan-left" || action === "pan-right") { const delta = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0).multiplyScalar(action === "pan-left" ? -0.5 : 0.5); camera.position.add(delta); orbit.target.add(delta); }
-      if (action === "reset") { orbit.target.set(3.5, 0, 2.5); camera.position.set(11, 9, 12); }
-      orbit.update(); invalidate();
+      if (action === "in" || action === "out")
+        camera.position
+          .copy(orbit.target)
+          .add(
+            offset.setLength(
+              Math.max(
+                2,
+                Math.min(45, offset.length() * (action === "in" ? 0.8 : 1.25)),
+              ),
+            ),
+          );
+      if (action === "left" || action === "right")
+        camera.position
+          .copy(orbit.target)
+          .add(
+            offset.applyAxisAngle(
+              new THREE.Vector3(0, 1, 0),
+              action === "left" ? 0.2 : -0.2,
+            ),
+          );
+      if (action === "pan-left" || action === "pan-right") {
+        const delta = new THREE.Vector3()
+          .setFromMatrixColumn(camera.matrix, 0)
+          .multiplyScalar(action === "pan-left" ? -0.5 : 0.5);
+        camera.position.add(delta);
+        orbit.target.add(delta);
+      }
+      if (action === "reset") {
+        orbit.target.set(3.5, 0, 2.5);
+        camera.position.set(11, 9, 12);
+      }
+      orbit.update();
+      invalidate();
     };
     window.addEventListener("camera-action", act);
     return () => window.removeEventListener("camera-action", act);
   }, [camera, controls, invalidate]);
   return null;
 }
-function ProjectWallHandles({ wall, opening, onChange }: { wall: Wall; opening?: Opening; onChange: (p: WallHandlePositions) => void }) {
+function ProjectWallHandles({
+  wall,
+  opening,
+  onChange,
+}: {
+  wall: Wall;
+  opening?: Opening;
+  onChange: (p: WallHandlePositions) => void;
+}) {
   const last = useRef("");
   useFrame(({ camera, size }) => {
     const project = (x: number, y: number, z: number) => {
       const v = new THREE.Vector3(x, y, z).project(camera);
-      return { x: Math.round((v.x + 1) * size.width / 2), y: Math.round((1 - v.y) * size.height / 2) };
+      return {
+        x: Math.round(((v.x + 1) * size.width) / 2),
+        y: Math.round(((1 - v.y) * size.height) / 2),
+      };
     };
     const len = Math.hypot(wall.b.x - wall.a.x, wall.b.z - wall.a.z);
-    const dx = (wall.b.x - wall.a.x) / len, dz = (wall.b.z - wall.a.z) / len;
-    const center = opening ? { x: wall.a.x + dx * len * opening.offset, z: wall.a.z + dz * len * opening.offset } : { x: (wall.a.x + wall.b.x) / 2, z: (wall.a.z + wall.b.z) / 2 };
+    const dx = (wall.b.x - wall.a.x) / len,
+      dz = (wall.b.z - wall.a.z) / len;
+    const center = opening
+      ? {
+          x: wall.a.x + dx * len * opening.offset,
+          z: wall.a.z + dz * len * opening.offset,
+        }
+      : { x: (wall.a.x + wall.b.x) / 2, z: (wall.a.z + wall.b.z) / 2 };
     const top = opening ? opening.sill + opening.height : wall.height;
     const mid = opening ? opening.sill + opening.height / 2 : wall.height / 2;
-    const start = opening ? center : wall.a, end = opening ? { x: center.x + dx * opening.width / 2, z: center.z + dz * opening.width / 2 } : wall.b;
-    const a = project(start.x, mid, start.z), b = project(end.x, mid, end.z), h = project(center.x, top, center.z);
+    const start = opening ? center : wall.a,
+      end = opening
+        ? {
+            x: center.x + (dx * opening.width) / 2,
+            z: center.z + (dz * opening.width) / 2,
+          }
+        : wall.b;
+    const a = project(start.x, mid, start.z),
+      b = project(end.x, mid, end.z),
+      h = project(center.x, top, center.z);
     const sign = opening ? 1 : -1;
     const va = project(start.x + sign * dx, mid, start.z + sign * dz);
     const vb = project(end.x + dx, mid, end.z + dz);
     const vh = project(center.x, top + 1, center.z);
-    const next = { a: { ...a, dx: va.x - a.x, dy: va.y - a.y }, b: { ...b, dx: vb.x - b.x, dy: vb.y - b.y }, height: { ...h, dx: vh.x - h.x, dy: vh.y - h.y } };
+    const next = {
+      a: { ...a, dx: va.x - a.x, dy: va.y - a.y },
+      b: { ...b, dx: vb.x - b.x, dy: vb.y - b.y },
+      height: { ...h, dx: vh.x - h.x, dy: vh.y - h.y },
+    };
     const serialized = JSON.stringify(next);
-    if (serialized !== last.current) { last.current = serialized; onChange(next); }
+    if (serialized !== last.current) {
+      last.current = serialized;
+      onChange(next);
+    }
   });
   return null;
 }
@@ -511,11 +678,20 @@ export default function Scene({
   readOnly?: boolean;
 }) {
   const p = useEditor((s) => s.previewProject ?? s.project)!;
-  const selected = useEditor(s => s.selected);
-  const [handlePositions, setHandlePositions] = useState<WallHandlePositions | null>(null);
-  const selectedWall = !readOnly && !walk ? visibleDesign(p).walls.find(w => selected.includes(w.id)) : undefined;
-  const selectedOpening = !readOnly && !walk ? visibleDesign(p).openings.find(o => selected.includes(o.id)) : undefined;
-  const openingWall = selectedOpening ? p.walls.find(w => w.id === selectedOpening.wallId) : undefined;
+  const selected = useEditor((s) => s.selected);
+  const [handlePositions, setHandlePositions] =
+    useState<WallHandlePositions | null>(null);
+  const selectedWall =
+    !readOnly && !walk
+      ? visibleDesign(p).walls.find((w) => selected.includes(w.id))
+      : undefined;
+  const selectedOpening =
+    !readOnly && !walk
+      ? visibleDesign(p).openings.find((o) => selected.includes(o.id))
+      : undefined;
+  const openingWall = selectedOpening
+    ? p.walls.find((w) => w.id === selectedOpening.wallId)
+    : undefined;
   const [failed, setFailed] = useState(false);
   if (failed)
     return (
@@ -532,35 +708,83 @@ export default function Scene({
       }
     >
       <div style={{ position: "relative", width: "100%", height: "100%" }}>
-      <Canvas
-        shadows={quality !== "Low"}
-        dpr={quality === "High" ? [1, 2] : 1}
-        camera={{ position: [11, 9, 12], fov: 42 }}
-        gl={{ preserveDrawingBuffer: true, antialias: true }}
-        onCreated={({ gl }) => {
-          gl.domElement.addEventListener("webglcontextlost", () =>
-            setFailed(true),
-          );
-        }}
-        onPointerMissed={() => useEditor.getState().select("")}
-      >
-        {!walk && <CameraActions />}
-        {selectedWall && <ProjectWallHandles wall={selectedWall} onChange={setHandlePositions} />}
-        {selectedOpening && openingWall && <ProjectWallHandles wall={openingWall} opening={selectedOpening} onChange={setHandlePositions} />}
-        <SceneContent
-          p={p}
-          preset={preset}
-          walk={walk}
-          quality={quality}
-          ceiling={ceiling}
-          readOnly={readOnly}
-        />
-      </Canvas>
-      {!walk && <div className="camera-actions" aria-label="Camera controls">
-        {([{ action: "in", label: "Zoom in", icon: ZoomIn }, { action: "out", label: "Zoom out", icon: ZoomOut }, { action: "left", label: "Orbit left", icon: RotateCcw }, { action: "right", label: "Orbit right", icon: RotateCw }, { action: "pan-left", label: "Pan left", icon: MoveLeft }, { action: "pan-right", label: "Pan right", icon: MoveRight }, { action: "reset", label: "Reset camera", icon: Home }]).map(({ action, label, icon: Icon }) => <button key={action} type="button" aria-label={label} title={label} onClick={() => window.dispatchEvent(new CustomEvent("camera-action", { detail: action }))}><Icon size={18} /></button>)}
-      </div>}
-      {selectedWall && handlePositions && <WallResizeControls key={selectedWall.id} wall={selectedWall} positions={handlePositions} />}
-      {selectedOpening && openingWall && handlePositions && <OpeningControls key={selectedOpening.id} opening={selectedOpening} wall={openingWall} positions={handlePositions} />}
+        <Canvas
+          shadows={quality !== "Low"}
+          dpr={quality === "High" ? [1, 2] : 1}
+          camera={{ position: [11, 9, 12], fov: 42 }}
+          gl={{ preserveDrawingBuffer: true, antialias: true }}
+          onCreated={({ gl }) => {
+            gl.domElement.addEventListener("webglcontextlost", () =>
+              setFailed(true),
+            );
+          }}
+          onPointerMissed={() => useEditor.getState().select("")}
+        >
+          {!walk && <CameraActions />}
+          {selectedWall && (
+            <ProjectWallHandles
+              wall={selectedWall}
+              onChange={setHandlePositions}
+            />
+          )}
+          {selectedOpening && openingWall && (
+            <ProjectWallHandles
+              wall={openingWall}
+              opening={selectedOpening}
+              onChange={setHandlePositions}
+            />
+          )}
+          <SceneContent
+            p={p}
+            preset={preset}
+            walk={walk}
+            quality={quality}
+            ceiling={ceiling}
+            readOnly={readOnly}
+          />
+        </Canvas>
+        {!walk && (
+          <div className="camera-actions" aria-label="Camera controls">
+            {[
+              { action: "in", label: "Zoom in", icon: ZoomIn },
+              { action: "out", label: "Zoom out", icon: ZoomOut },
+              { action: "left", label: "Orbit left", icon: RotateCcw },
+              { action: "right", label: "Orbit right", icon: RotateCw },
+              { action: "pan-left", label: "Pan left", icon: MoveLeft },
+              { action: "pan-right", label: "Pan right", icon: MoveRight },
+              { action: "reset", label: "Reset camera", icon: Home },
+            ].map(({ action, label, icon: Icon }) => (
+              <button
+                key={action}
+                type="button"
+                aria-label={label}
+                title={label}
+                onClick={() =>
+                  window.dispatchEvent(
+                    new CustomEvent("camera-action", { detail: action }),
+                  )
+                }
+              >
+                <Icon size={18} />
+              </button>
+            ))}
+          </div>
+        )}
+        {selectedWall && handlePositions && (
+          <WallResizeControls
+            key={selectedWall.id}
+            wall={selectedWall}
+            positions={handlePositions}
+          />
+        )}
+        {selectedOpening && openingWall && handlePositions && (
+          <OpeningControls
+            key={selectedOpening.id}
+            opening={selectedOpening}
+            wall={openingWall}
+            positions={handlePositions}
+          />
+        )}
       </div>
     </RenderBoundary>
   );

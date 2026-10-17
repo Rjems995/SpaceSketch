@@ -41,8 +41,12 @@ export function floorTexture(kind: string) {
   } else if (kind === "grass" || kind === "terrain") {
     for (let i = 0; i < 15000; i++) {
       ctx.strokeStyle = `rgba(35,45,20,${0.08 + rand() * 0.2})`;
-      ctx.beginPath(); const x = rand() * 512, y = rand() * 512;
-      ctx.moveTo(x, y); ctx.lineTo(x + rand() * 4, y - (kind === "grass" ? 7 : 2)); ctx.stroke();
+      ctx.beginPath();
+      const x = rand() * 512,
+        y = rand() * 512;
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + rand() * 4, y - (kind === "grass" ? 7 : 2));
+      ctx.stroke();
     }
   } else if (kind === "concrete" || kind === "carpet") {
     for (let i = 0; i < 30000; i++) {

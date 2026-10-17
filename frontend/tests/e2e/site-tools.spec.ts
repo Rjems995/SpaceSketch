@@ -1,63 +1,115 @@
 import { test, expect } from "@playwright/test";
 test.use({ hasTouch: true });
 
-test("moves and resizes openings, chooses styles, and saves outdoor surfaces", async ({ page }) => {
-  const errors: string[] = []; page.on("pageerror", e => errors.push(e.message));
-  await page.goto("/"); await page.getByRole("button", { name: "New project", exact: true }).click();
+test("moves and resizes openings, chooses styles, and saves outdoor surfaces", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto("/");
+  await page.getByRole("button", { name: "New project", exact: true }).click();
   await page.getByRole("button", { name: "2D", exact: true }).click();
-  const bounds = (await page.locator(".workspace canvas").first().boundingBox())!;
-  const zoom = Math.max(15, Math.min(85, (bounds.width - 110) / 7, (bounds.height - 170) / 5));
-  const tap = async (x: number, z: number) => page.touchscreen.tap(bounds.x + 65 + x * zoom, bounds.y + 95 + z * zoom);
+  const bounds = (await page
+    .locator(".workspace canvas")
+    .first()
+    .boundingBox())!;
+  const zoom = Math.max(
+    15,
+    Math.min(85, (bounds.width - 110) / 7, (bounds.height - 170) / 5),
+  );
+  const tap = async (x: number, z: number) =>
+    page.touchscreen.tap(bounds.x + 65 + x * zoom, bounds.y + 95 + z * zoom);
   await tap(3.5, 0);
   await expect(page.getByLabel("Opening style")).toBeVisible();
   await page.getByLabel("Opening style").selectOption("sliding");
   await page.mouse.move(bounds.x + 65 + 3.5 * zoom, bounds.y + 95);
   await page.mouse.down();
-  await page.mouse.move(bounds.x + 65 + 3.8 * zoom, bounds.y + 95, { steps: 8 });
+  await page.mouse.move(bounds.x + 65 + 3.8 * zoom, bounds.y + 95, {
+    steps: 8,
+  });
   await page.mouse.up();
-  await expect(page.getByLabel("Position along wall (%)")).not.toHaveValue("50");
+  await expect(page.getByLabel("Position along wall (%)")).not.toHaveValue(
+    "50",
+  );
   await page.getByTitle("Undo (Ctrl+Z)", { exact: true }).click();
   await expect(page.getByLabel("Position along wall (%)")).toHaveValue("50");
   const move = page.getByRole("button", { name: "Move opening", exact: true });
   const handle = (await move.boundingBox())!;
-  await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2); await page.mouse.down();
-  await page.mouse.move(handle.x + handle.width / 2 + zoom * 0.5, handle.y + handle.height / 2, { steps: 8 });
-  await expect(move).toContainText("4.00 m"); await page.mouse.up();
-  const resize = page.getByRole("button", { name: "Resize opening width", exact: true });
-  await resize.focus(); await page.keyboard.press("ArrowRight");
-  await expect(page.getByLabel("width (m)", { exact: true })).toHaveValue("2.6");
+  await page.mouse.move(
+    handle.x + handle.width / 2,
+    handle.y + handle.height / 2,
+  );
+  await page.mouse.down();
+  await page.mouse.move(
+    handle.x + handle.width / 2 + zoom * 0.5,
+    handle.y + handle.height / 2,
+    { steps: 8 },
+  );
+  await expect(move).toContainText("4.00 m");
+  await page.mouse.up();
+  const resize = page.getByRole("button", {
+    name: "Resize opening width",
+    exact: true,
+  });
+  await resize.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByLabel("width (m)", { exact: true })).toHaveValue(
+    "2.6",
+  );
   await page.getByRole("button", { name: "3D", exact: true }).click();
   await expect(move).toBeVisible();
   await page.getByRole("button", { name: "Orbit left", exact: true }).click();
   await page.getByRole("button", { name: "Reset camera", exact: true }).click();
   await page.getByRole("button", { name: "Build", exact: true }).click();
   for (const kind of ["patio", "grass", "path", "pool", "terrain"]) {
-    await page.getByRole("button", { name: `Draw ${kind}`, exact: true }).click();
-    await tap(1, 2); await tap(3, 4);
-    await expect(page.getByLabel("Surface name")).toHaveValue(kind[0].toUpperCase() + kind.slice(1));
+    await page
+      .getByRole("button", { name: `Draw ${kind}`, exact: true })
+      .click();
+    await tap(1, 2);
+    await tap(3, 4);
+    await expect(page.getByLabel("Surface name")).toHaveValue(
+      kind[0].toUpperCase() + kind.slice(1),
+    );
     if (kind === "terrain") await page.getByLabel("Slope rise (m)").fill("0.5");
   }
   await page.getByTitle("Save project", { exact: true }).click();
-  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("spacesketch-projects-v1")!)[0]);
-  expect(saved.surfaces).toHaveLength(5); expect(saved.surfaces[4].slope).toBe(0.5);
+  const saved = await page.evaluate(
+    () => JSON.parse(localStorage.getItem("spacesketch-projects-v1")!)[0],
+  );
+  expect(saved.surfaces).toHaveLength(5);
+  expect(saved.surfaces[4].slope).toBe(0.5);
   expect(saved.openings[0]).toMatchObject({ width: 2.6, style: "sliding" });
-  await page.reload(); await page.getByRole("button", { name: "3D", exact: true }).click();
-  await expect(page.locator(".furniture-preview-image")).toHaveCount(28, { timeout: 30000 });
+  await page.reload();
+  await page.getByRole("button", { name: "3D", exact: true }).click();
+  await expect(page.locator(".furniture-preview-image")).toHaveCount(28, {
+    timeout: 30000,
+  });
   await expect(page.locator(".workspace canvas[data-engine]")).toBeVisible();
   await page.screenshot({ path: "test-results/outdoor-surfaces.png" });
   expect(errors).toEqual([]);
 });
 
-test("mobile properties collapse without losing the selection", async ({ page }) => {
+test("mobile properties collapse without losing the selection", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/"); await page.getByRole("button", { name: "New project", exact: true }).click();
+  await page.goto("/");
+  await page.getByRole("button", { name: "New project", exact: true }).click();
   await page.getByRole("button", { name: "2D", exact: true }).click();
-  const bounds = (await page.locator(".workspace canvas").first().boundingBox())!;
-  const zoom = Math.max(15, Math.min(85, (bounds.width - 110) / 7, (bounds.height - 170) / 5));
+  const bounds = (await page
+    .locator(".workspace canvas")
+    .first()
+    .boundingBox())!;
+  const zoom = Math.max(
+    15,
+    Math.min(85, (bounds.width - 110) / 7, (bounds.height - 170) / 5),
+  );
   await page.touchscreen.tap(bounds.x + 65 + zoom, bounds.y + 95);
   await page.getByTitle("Collapse properties").click();
   await expect(page.getByLabel("End X (m)", { exact: true })).not.toBeVisible();
-  await expect(page.getByRole("button", { name: "Drag wall length", exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Drag wall length", exact: true }),
+  ).toBeVisible();
   await page.getByTitle("Expand properties").click();
   await expect(page.getByLabel("End X (m)", { exact: true })).toBeVisible();
   await page.getByTitle("Collapse properties").click();
@@ -66,5 +118,7 @@ test("mobile properties collapse without losing the selection", async ({ page })
   await expect(zoomButton).toBeVisible();
   expect((await zoomButton.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   await zoomButton.click();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(390);
 });

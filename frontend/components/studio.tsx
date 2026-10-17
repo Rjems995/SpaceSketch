@@ -39,7 +39,13 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "motion/react";
-import { catalog, Furniture, Project, template, surfaceKinds } from "@/lib/model";
+import {
+  catalog,
+  Furniture,
+  Project,
+  template,
+  surfaceKinds,
+} from "@/lib/model";
 import { area, corners, format, overlap, wallCorners } from "@/lib/geometry";
 import { useEditor } from "@/stores/editor";
 import {
@@ -59,9 +65,19 @@ import CloudPanel from "./cloud-panel";
 import FurnitureIcon from "./furniture-icon";
 import BrandLogo from "./brand-logo";
 import type { PreviewImages } from "./furniture-previews";
+import { useDialogFocus } from "./use-dialog-focus";
+import MaterialPicker from "./material-picker";
+import DesignChecks from "./design-checks";
 import Image from "next/image";
-const FurniturePreviews = dynamic(() => import("./furniture-previews"), { ssr: false });
-import { resizeRoom, splitWall, deleteRoom, moveWallEndpoint } from "@/lib/rooms";
+const FurniturePreviews = dynamic(() => import("./furniture-previews"), {
+  ssr: false,
+});
+import {
+  resizeRoom,
+  splitWall,
+  deleteRoom,
+  moveWallEndpoint,
+} from "@/lib/rooms";
 import {
   cacheCloudRevision,
   mergeCloudProjects,
@@ -85,6 +101,7 @@ const templates = [
   "Bathroom",
   "Studio Apartment",
   "Office",
+  "Outdoor Patio",
 ];
 export default function Studio({ projectId }: { projectId?: string } = {}) {
   const [previews, setPreviews] = useState<PreviewImages>({});
@@ -109,6 +126,11 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
     [password, setPassword] = useState(""),
     [user, setUser] = useState<string | null>(null),
     [busy, setBusy] = useState(false);
+  const closeDialog = useCallback(() => {
+    setAuth(false);
+    setSharing(false);
+  }, []);
+  useDialogFocus(auth || sharing, closeDialog);
   const input = useRef<HTMLInputElement>(null);
   const modelInput = useRef<HTMLInputElement>(null);
   const saving = useRef(false);
@@ -191,7 +213,12 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
   }, [p, s.status, save]);
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement).matches("input,textarea,select")) return;
+      if (
+        (e.target as HTMLElement).closest(
+          "input,textarea,select,[contenteditable=true],[role=dialog]",
+        )
+      )
+        return;
       const mod = e.ctrlKey || e.metaKey;
       if (mod && ["z", "y", "d", "s"].includes(e.key.toLowerCase())) {
         e.preventDefault();
@@ -241,7 +268,12 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
           15,
           26,
         );
-        const pts = [...p.walls.flatMap((w) => [w.a, w.b]), ...p.surfaces.flatMap(o => corners(o))];
+        const pts = [
+          ...p.walls.flatMap((w) => [w.a, w.b]),
+          ...p.rooms.flatMap((r) => r.points),
+          ...p.furniture.flatMap(corners),
+          ...p.surfaces.flatMap((o) => corners(o)),
+        ];
         const minX = Math.min(0, ...pts.map((q) => q.x)),
           minZ = Math.min(0, ...pts.map((q) => q.z)),
           maxX = Math.max(7, ...pts.map((q) => q.x)),
@@ -249,10 +281,20 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
         const scale = Math.min(250 / (maxX - minX), 145 / (maxZ - minZ)),
           x = (v: number) => 20 + (v - minX) * scale,
           y = (v: number) => 45 + (v - minZ) * scale;
-        p.surfaces.forEach(o => {
-          const boundary = corners(o); doc.setDrawColor(o.color); doc.setLineWidth(0.5);
-          boundary.forEach((q, i) => doc.line(x(q.x), y(q.z), x(boundary[(i + 1) % 4].x), y(boundary[(i + 1) % 4].z)));
-          doc.setFontSize(8); doc.text(o.name, x(o.x), y(o.z));
+        p.surfaces.forEach((o) => {
+          const boundary = corners(o);
+          doc.setDrawColor(o.color);
+          doc.setLineWidth(0.5);
+          boundary.forEach((q, i) =>
+            doc.line(
+              x(q.x),
+              y(q.z),
+              x(boundary[(i + 1) % 4].x),
+              y(boundary[(i + 1) % 4].z),
+            ),
+          );
+          doc.setFontSize(8);
+          doc.text(o.name, x(o.x), y(o.z));
         });
         doc.setDrawColor("#444444");
         p.walls.forEach((w) => {
@@ -284,7 +326,47 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
             ),
           );
         });
-        doc.save(`${p.name}.pdf`);
+        p.openings.forEach((o) => {
+          const w = p.walls.find((w) => w.id === o.wallId)!;
+          const length = Math.hypot(w.b.x - w.a.x, w.b.z - w.a.z);
+          const dx = (w.b.x - w.a.x) / length,
+            dz = (w.b.z - w.a.z) / length;
+          const cx = w.a.x + (w.b.x - w.a.x) * o.offset,
+            cz = w.a.z + (w.b.z - w.a.z) * o.offset;
+          doc.setDrawColor(o.kind === "door" ? "#ffffff" : "#80b4ca");
+          doc.setLineWidth(w.thickness * scale + 0.3);
+          doc.line(
+            x(cx - (dx * o.width) / 2),
+            y(cz - (dz * o.width) / 2),
+            x(cx + (dx * o.width) / 2),
+            y(cz + (dz * o.width) / 2),
+          );
+          doc.setTextColor("#333333");
+          doc.setFontSize(7);
+          doc.text(
+            o.kind + " " + format(o.width, p.units),
+            x(cx) + 2,
+            y(cz) + 4,
+          );
+        });
+        p.measurements.forEach((m) => {
+          doc.setDrawColor("#477789");
+          doc.setLineWidth(0.3);
+          doc.line(x(m.a.x), y(m.a.z), x(m.b.x), y(m.b.z));
+          doc.text(
+            format(Math.hypot(m.b.x - m.a.x, m.b.z - m.a.z), p.units),
+            x((m.a.x + m.b.x) / 2),
+            y((m.a.z + m.b.z) / 2) - 2,
+          );
+        });
+        doc.setFontSize(8);
+        doc.setTextColor("#333333");
+        doc.text(
+          "Dimensions in " + p.units + ". Room areas in square meters.",
+          15,
+          203,
+        );
+        doc.save(p.name + ".pdf");
       } else {
         if (s.view === "2d") {
           toast.info("Switch to 3D before exporting an image or GLB.");
@@ -300,7 +382,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
   const wall = p?.walls.find((o) => o.id === s.selected[0]);
   const room = p?.rooms.find((o) => o.id === s.selected[0]);
   const opening = p?.openings.find((o) => o.id === s.selected[0]);
-  const surface = p?.surfaces.find(o => o.id === s.selected[0]);
+  const surface = p?.surfaces.find((o) => o.id === s.selected[0]);
   const overlapWarning =
     obj &&
     obj.kind !== "rug" &&
@@ -413,6 +495,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
             </button>
             <div className="history">
               <button
+                aria-label="Undo (Ctrl+Z)"
                 title="Undo (Ctrl+Z)"
                 disabled={!s.past.length}
                 onClick={s.undo}
@@ -420,6 +503,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                 <Undo2 size={17} />
               </button>
               <button
+                aria-label="Redo (Ctrl+Y)"
                 title="Redo (Ctrl+Y)"
                 disabled={!s.future.length}
                 onClick={s.redo}
@@ -439,9 +523,32 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
               ))}
             </div>
             <div className="top-actions">
-              <button title="Save project" onClick={save}>
+              <button
+                aria-label="Save project"
+                title="Save project"
+                onClick={save}
+              >
                 <Save size={18} />
               </button>
+              <select
+                aria-label="Select design object"
+                value={s.selected[0] ?? ""}
+                onChange={(e) => s.select(e.target.value)}
+              >
+                <option value="">Select an object</option>
+                {[
+                  ...p.rooms,
+                  ...p.walls,
+                  ...p.openings,
+                  ...p.furniture,
+                  ...p.surfaces,
+                ].map((o, i) => (
+                  <option key={o.id} value={o.id}>
+                    {"name" in o ? o.name : "kind" in o ? o.kind : "Wall"} (
+                    {i + 1})
+                  </option>
+                ))}
+              </select>
               <select
                 aria-label="Export project"
                 value=""
@@ -452,8 +559,8 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                 </option>
                 <option value="json">JSON backup</option>
                 <option value="pdf">PDF floor plan</option>
-                <option value="png">PNG image</option>
-                <option value="jpg">JPEG image</option>
+                <option value="png">PNG image (3840 px)</option>
+                <option value="jpg">JPEG image (3840 px)</option>
                 <option value="glb">GLB scene</option>
               </select>
               <button
@@ -636,6 +743,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                     </p>
                     <div className="card-actions">
                       <button
+                        aria-label="Rename project"
                         title="Rename project"
                         onClick={async () => {
                           const name = prompt("Project name", project.name);
@@ -661,6 +769,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                         <Settings2 size={14} />
                       </button>
                       <button
+                        aria-label="Duplicate project"
                         title="Duplicate project"
                         onClick={() => {
                           saveLocal({
@@ -676,6 +785,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                         <Copy size={14} />
                       </button>
                       <button
+                        aria-label="Delete project"
                         title="Delete project"
                         onClick={async () => {
                           if (
@@ -768,6 +878,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
               ))}
               <button
                 className="rail-bottom"
+                aria-label="Import project"
                 title="Import project"
                 onClick={() => input.current?.click()}
               >
@@ -786,6 +897,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                   </p>
                 </div>
                 <button
+                  aria-label="Collapse library"
                   title="Collapse library"
                   onClick={() => setSidebar(false)}
                 >
@@ -868,7 +980,19 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                               } as React.CSSProperties
                             }
                           >
-                            {previews[c.kind] ? <Image src={previews[c.kind]!} alt={`${c.name} 3D preview`} width={256} height={192} unoptimized className="furniture-preview-image" draggable={false} /> : <FurnitureIcon kind={c.kind} />}
+                            {previews[c.kind] ? (
+                              <Image
+                                src={previews[c.kind]!}
+                                alt={`${c.name} 3D preview`}
+                                width={256}
+                                height={192}
+                                unoptimized
+                                className="furniture-preview-image"
+                                draggable={false}
+                              />
+                            ) : (
+                              <FurnitureIcon kind={c.kind} />
+                            )}
                           </div>
                           <strong>{c.name}</strong>
                           <span>
@@ -877,7 +1001,28 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                         </button>
                       ))}
                   </div>
-                  {category === "Outdoor" && <div className="build-tools"><h3>Outdoor surfaces</h3><p>Choose a surface, then tap two opposite corners in 2D.</p>{surfaceKinds.map(kind => <button key={kind} onClick={() => { useEditor.setState({ tool: `surface:${kind}`, view: "2d" }); setSidebar(false); }}>Draw {kind}</button>)}</div>}
+                  {category === "Outdoor" && (
+                    <div className="build-tools">
+                      <h3>Outdoor surfaces</h3>
+                      <p>
+                        Choose a surface, then tap two opposite corners in 2D.
+                      </p>
+                      {surfaceKinds.map((kind) => (
+                        <button
+                          key={kind}
+                          onClick={() => {
+                            useEditor.setState({
+                              tool: `surface:${kind}`,
+                              view: "2d",
+                            });
+                            setSidebar(false);
+                          }}
+                        >
+                          Draw {kind}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   <p className="library-tip">
                     Click to add · Drag into the 2D floor plan
                   </p>
@@ -916,48 +1061,28 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                     Select walls to move their endpoints.
                   </p>
                   <h3>Outdoor surfaces</h3>
-                  {surfaceKinds.map(kind => <button key={kind} className={s.tool === `surface:${kind}` ? "active" : ""} onClick={() => { useEditor.setState({ tool: `surface:${kind}`, view: "2d" }); setSidebar(false); }}>Draw {kind}</button>)}
-                  <p>Tap two opposite corners. Edit size, elevation, and terrain slope in Properties.</p>
+                  {surfaceKinds.map((kind) => (
+                    <button
+                      key={kind}
+                      className={s.tool === `surface:${kind}` ? "active" : ""}
+                      onClick={() => {
+                        useEditor.setState({
+                          tool: `surface:${kind}`,
+                          view: "2d",
+                        });
+                        setSidebar(false);
+                      }}
+                    >
+                      Draw {kind}
+                    </button>
+                  ))}
+                  <p>
+                    Tap two opposite corners. Edit size, elevation, and terrain
+                    slope in Properties.
+                  </p>
                 </div>
               ) : tab === "Materials" ? (
-                <div className="material-library">
-                  <p>
-                    Select a room, wall, or furniture piece, then choose a
-                    finish.
-                  </p>
-                  {[
-                    "#e9e5da",
-                    "#c6ae8d",
-                    "#a9b39f",
-                    "#c39880",
-                    "#555952",
-                    "#bfc1bd",
-                    "#dcc9ae",
-                    "#e8ded0",
-                  ].map((color) => (
-                    <button
-                      key={color}
-                      style={{ background: color }}
-                      title={`Apply ${color}`}
-                      onClick={() => {
-                        if (!obj && !wall && !room) {
-                          toast.info(
-                            "Select a room, wall, or furniture first.",
-                          );
-                          return;
-                        }
-                        s.edit((p) => {
-                          const target = [
-                            ...p.furniture,
-                            ...p.walls,
-                            ...p.rooms,
-                          ].find((o) => o.id === s.selected[0]);
-                          if (target) target.material.color = color;
-                        });
-                      }}
-                    />
-                  ))}
-                </div>
+                <MaterialPicker />
               ) : (
                 <div className="property-body">
                   <label>
@@ -1032,6 +1157,8 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                   { tool: "measure", icon: Ruler, label: "Measure" },
                 ].map((t) => (
                   <button
+                    aria-label={t.label}
+                    aria-pressed={s.tool === t.tool}
                     title={t.label}
                     key={t.tool}
                     className={s.tool === t.tool ? "active" : ""}
@@ -1053,6 +1180,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                 </span>
                 <div className="row">
                   <button
+                    aria-label="Presentation mode"
                     title="Presentation mode"
                     onClick={() => setPresentation(!presentation)}
                   >
@@ -1096,18 +1224,58 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                           ? "Room properties"
                           : opening
                             ? "Opening properties"
-                            : surface ? "Surface properties" : "Your design"}
+                            : surface
+                              ? "Surface properties"
+                              : "Your design"}
                   </h2>
                 </div>
                 {s.selected.length ? (
-                  <button title={propertiesCollapsed ? "Expand properties" : "Collapse properties"} aria-expanded={!propertiesCollapsed} onClick={() => setPropertiesCollapsed(v => !v)}>
-                    <ChevronDown size={17} style={{ transform: propertiesCollapsed ? "rotate(180deg)" : undefined }} />
+                  <button
+                    title={
+                      propertiesCollapsed
+                        ? "Expand properties"
+                        : "Collapse properties"
+                    }
+                    aria-expanded={!propertiesCollapsed}
+                    onClick={() => setPropertiesCollapsed((v) => !v)}
+                  >
+                    <ChevronDown
+                      size={17}
+                      style={{
+                        transform: propertiesCollapsed
+                          ? "rotate(180deg)"
+                          : undefined,
+                      }}
+                    />
                   </button>
                 ) : (
                   <Settings2 size={17} />
                 )}
               </div>
               <div className="property-body">
+                <label>
+                  Select object
+                  <select
+                    aria-label="Properties object selector"
+                    value={s.selected[0] ?? ""}
+                    onChange={(e) => s.select(e.target.value)}
+                  >
+                    <option value="">Project overview</option>
+                    {[
+                      ...p.rooms,
+                      ...p.walls,
+                      ...p.openings,
+                      ...p.furniture,
+                      ...p.surfaces,
+                    ].map((o, i) => (
+                      <option key={o.id} value={o.id}>
+                        {"name" in o ? o.name : "kind" in o ? o.kind : "Wall"} (
+                        {i + 1})
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <DesignChecks />
                 {obj ? (
                   <>
                     <div className="selected-card">
@@ -1289,6 +1457,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                       </button>
                       <button
                         className="danger"
+                        aria-label="Delete selected"
                         title="Delete selected"
                         onClick={s.remove}
                       >
@@ -1299,18 +1468,52 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                 ) : wall ? (
                   <>
                     <h3>Wall dimensions</h3>
-                    <p>Dimensions are in meters. Move either endpoint to change the length or angle; connected walls follow.</p>
-                    {(["a", "b"] as const).map(end => (["x", "z"] as const).map(axis => (
-                      <label key={`${end}${axis}`}>
-                        {end === "a" ? "Start" : "End"} {axis.toUpperCase()} (m)
-                        <input type="number" step="0.1" min="-100" max="100" value={wall[end][axis]}
-                          onChange={e => { if (e.target.value !== "") s.edit(p => moveWallEndpoint(p, wall.id, end, { ...wall[end], [axis]: Number(e.target.value) })); }} />
-                      </label>
-                    )))}
+                    <p>
+                      Dimensions are in meters. Move either endpoint to change
+                      the length or angle; connected walls follow.
+                    </p>
+                    {(["a", "b"] as const).map((end) =>
+                      (["x", "z"] as const).map((axis) => (
+                        <label key={`${end}${axis}`}>
+                          {end === "a" ? "Start" : "End"} {axis.toUpperCase()}{" "}
+                          (m)
+                          <input
+                            type="number"
+                            step="0.1"
+                            min="-100"
+                            max="100"
+                            value={wall[end][axis]}
+                            onChange={(e) => {
+                              if (e.target.value !== "")
+                                s.edit((p) =>
+                                  moveWallEndpoint(p, wall.id, end, {
+                                    ...wall[end],
+                                    [axis]: Number(e.target.value),
+                                  }),
+                                );
+                            }}
+                          />
+                        </label>
+                      )),
+                    )}
                     <div className="row">
-                      {(["window", "door"] as const).map(kind => <button key={kind} className="secondary" onClick={() => { setTab("Build"); useEditor.setState({ tool: kind, view: "2d" }); }}>Add {kind}</button>)}
+                      {(["window", "door"] as const).map((kind) => (
+                        <button
+                          key={kind}
+                          className="secondary"
+                          onClick={() => {
+                            setTab("Build");
+                            useEditor.setState({ tool: kind, view: "2d" });
+                          }}
+                        >
+                          Add {kind}
+                        </button>
+                      ))}
                     </div>
-                    <p>Choose Add window or Add door, then click its position on a wall.</p>
+                    <p>
+                      Choose Add window or Add door, then click its position on
+                      a wall.
+                    </p>
                     {(["height", "thickness"] as const).map((k) => (
                       <label key={k}>
                         {k}
@@ -1540,30 +1743,131 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                 ) : surface ? (
                   <>
                     <h3>{surface.kind} surface</h3>
-                    <label>Surface name<input value={surface.name} onChange={e => s.edit(p => { p.surfaces.find(v => v.id === surface.id)!.name = e.target.value; })} /></label>
-                    {(["x", "z", "width", "depth", "elevation", "rotation", ...(surface.kind === "terrain" ? ["slope" as const] : [])] as const).map(key => <label key={key}>{key === "slope" ? "Slope rise (m)" : `${key} ${key === "rotation" ? "(degrees)" : "(m)"}`}
-                      <input type="number" step={key === "rotation" ? 15 : 0.1} value={surface[key]} onChange={e => { if (e.target.value !== "") s.edit(p => { p.surfaces.find(v => v.id === surface.id)![key] = Number(e.target.value); }); }} />
-                    </label>)}
-                    <label>Surface color<input type="color" value={surface.color} onChange={e => s.edit(p => { p.surfaces.find(v => v.id === surface.id)!.color = e.target.value; })} /></label>
-                    <button className="danger" onClick={s.remove}>Delete surface</button>
+                    <label>
+                      Surface name
+                      <input
+                        value={surface.name}
+                        onChange={(e) =>
+                          s.edit((p) => {
+                            p.surfaces.find((v) => v.id === surface.id)!.name =
+                              e.target.value;
+                          })
+                        }
+                      />
+                    </label>
+                    {(
+                      [
+                        "x",
+                        "z",
+                        "width",
+                        "depth",
+                        "elevation",
+                        "rotation",
+                        ...(surface.kind === "terrain"
+                          ? ["slope" as const]
+                          : []),
+                      ] as const
+                    ).map((key) => (
+                      <label key={key}>
+                        {key === "slope"
+                          ? "Slope rise (m)"
+                          : `${key} ${key === "rotation" ? "(degrees)" : "(m)"}`}
+                        <input
+                          type="number"
+                          step={key === "rotation" ? 15 : 0.1}
+                          value={surface[key]}
+                          onChange={(e) => {
+                            if (e.target.value !== "")
+                              s.edit((p) => {
+                                p.surfaces.find((v) => v.id === surface.id)![
+                                  key
+                                ] = Number(e.target.value);
+                              });
+                          }}
+                        />
+                      </label>
+                    ))}
+                    <label>
+                      Surface color
+                      <input
+                        type="color"
+                        value={surface.color}
+                        onChange={(e) =>
+                          s.edit((p) => {
+                            p.surfaces.find((v) => v.id === surface.id)!.color =
+                              e.target.value;
+                          })
+                        }
+                      />
+                    </label>
+                    <button className="danger" onClick={s.remove}>
+                      Delete surface
+                    </button>
                   </>
                 ) : opening ? (
                   <>
-                    <h3>{opening.kind === "window" ? "Window" : "Door"} dimensions</h3>
-                    <label>Opening style<select value={opening.style ?? "classic"} onChange={e => s.edit(p => { p.openings.find(o => o.id === opening.id)!.style = e.target.value as "classic" | "sliding" | "double"; })}>
-                      <option value="classic">Classic</option><option value="sliding">Sliding</option><option value="double">Double</option>
-                    </select></label>
-                    <p>Drag the opening along its wall, or use Move, Width, and Height handles. Blue labels show clearances.</p>
-                    {(["width", "height", "sill", "offset"] as const).map(key => (
-                      <label key={key}>
-                        {key === "offset" ? "Position along wall (%)" : `${key} (m)`}
-                        <input type="number" step={key === "offset" ? 1 : 0.1}
-                          min={key === "width" || key === "height" ? 0.3 : 0}
-                          max={key === "offset" ? 100 : key === "width" ? 4 : key === "height" ? 3 : 2}
-                          value={key === "offset" ? Math.round(opening.offset * 10000) / 100 : opening[key]}
-                          onChange={e => { if (e.target.value !== "") s.edit(p => { p.openings.find(o => o.id === opening.id)![key] = Number(e.target.value) / (key === "offset" ? 100 : 1); }); }} />
-                      </label>
-                    ))}
+                    <h3>
+                      {opening.kind === "window" ? "Window" : "Door"} dimensions
+                    </h3>
+                    <label>
+                      Opening style
+                      <select
+                        value={opening.style ?? "classic"}
+                        onChange={(e) =>
+                          s.edit((p) => {
+                            p.openings.find((o) => o.id === opening.id)!.style =
+                              e.target.value as
+                                "classic" | "sliding" | "double";
+                          })
+                        }
+                      >
+                        <option value="classic">Classic</option>
+                        <option value="sliding">Sliding</option>
+                        <option value="double">Double</option>
+                      </select>
+                    </label>
+                    <p>
+                      Drag the opening along its wall, or use Move, Width, and
+                      Height handles. Blue labels show clearances.
+                    </p>
+                    {(["width", "height", "sill", "offset"] as const).map(
+                      (key) => (
+                        <label key={key}>
+                          {key === "offset"
+                            ? "Position along wall (%)"
+                            : `${key} (m)`}
+                          <input
+                            type="number"
+                            step={key === "offset" ? 1 : 0.1}
+                            min={key === "width" || key === "height" ? 0.3 : 0}
+                            max={
+                              key === "offset"
+                                ? 100
+                                : key === "width"
+                                  ? 4
+                                  : key === "height"
+                                    ? 3
+                                    : 2
+                            }
+                            value={
+                              key === "offset"
+                                ? Math.round(opening.offset * 10000) / 100
+                                : opening[key]
+                            }
+                            onChange={(e) => {
+                              if (e.target.value !== "")
+                                s.edit((p) => {
+                                  p.openings.find((o) => o.id === opening.id)![
+                                    key
+                                  ] =
+                                    Number(e.target.value) /
+                                    (key === "offset" ? 100 : 1);
+                                });
+                            }}
+                          />
+                        </label>
+                      ),
+                    )}
                     <p>Openings must fit within the wall and cannot overlap.</p>
                     <p>
                       {opening.kind} · {opening.width} m × {opening.height} m
@@ -1753,6 +2057,10 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
         <div className="modal-backdrop">
           <form
             className="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Account"
+            tabIndex={-1}
             onSubmit={async (e) => {
               e.preventDefault();
               if (!supabase) return;
@@ -1772,6 +2080,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
             <button
               type="button"
               className="modal-close"
+              aria-label="Close account"
               onClick={() => setAuth(false)}
             >
               <X />

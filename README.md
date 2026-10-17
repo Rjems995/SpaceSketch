@@ -29,7 +29,7 @@ On Windows PowerShell, use `npm.cmd` if execution policy blocks `npm.ps1`.
 
 ### Rooms, walls, and openings
 
-- Seven starter layouts, including a two-room studio apartment.
+- Eight starter layouts, including furnished bedrooms, kitchens, offices, a two-room studio apartment, and an outdoor patio with lawn and a path.
 - Rectangular and polygon rooms, connected walls, wall splitting, room resizing, and visibility controls.
 - Live wall resizing with handles at both endpoints and the top in 3D; endpoint and height controls in 2D. Connected room boundaries follow the changes.
 - Draggable windows and doors with width, height, sill, and position controls. Choose classic, sliding, or double styles.
@@ -41,7 +41,8 @@ On Windows PowerShell, use `npm.cmd` if execution policy blocks `npm.ps1`.
 - **28 furniture types** with rendered 3D catalog thumbnails and icon fallbacks.
 - Indoor pieces plus garden benches, loungers, umbrellas, pergolas, planters, trees, hedges, fences, and a barbecue.
 - Move, resize, rotate, duplicate, lock, delete, and group-drag furniture. Use transform gizmos in 3D or precise property inputs.
-- Procedural wood, tile, concrete, and carpet finishes; color and material controls.
+- Visual material library with oak/walnut, tile, concrete, fabric, plaster, and paint presets. Apply finishes to rooms, walls, and procedural furniture; imported models retain their embedded materials.
+- Red placement highlights in 2D and 3D, with selectable text warnings for overlapping furniture and blocked door approaches. Checks reserve 90 cm on both sides of doors and exclude rugs and wall art.
 - Import self-contained GLB/glTF models with license and attribution information. External model dependencies are not supported.
 
 ### Outdoor design
@@ -57,35 +58,36 @@ These are editable design surfaces. Terrain sculpting, excavation, and pool simu
 - Desktop walkthrough with WASD movement and pointer-lock mouse look.
 - Mobile touch targets, collapsible library and properties panels, 2D pinch zoom/pan, and 3D zoom/orbit/pan/reset buttons.
 - Measurements in meters, centimeters, feet, or inches; user-entered budget estimates.
+- Keyboard-accessible object selectors, visible focus outlines, labeled toolbar actions, reduced-motion styles, and focus trapping/restoration in account and sharing dialogs.
 
 ### Saving and sharing
 
 - Local autosave, interrupted-session recovery, revision checks, and up to 100 undo steps.
-- Export JSON backups, PDF floor plans, PNG/JPEG views, and GLB geometry. Image and GLB exports require a visible 3D view.
+- Export JSON backups, PDF floor plans with wall/opening dimensions and custom measurements, high-resolution PNG/JPEG views (up to 3840 pixels wide), and GLB geometry. Images retain the viewport aspect ratio; image and GLB exports require a visible 3D view.
 - Optional Supabase sign-in, cloud save/load, historical versions, and revocable read-only sharing links.
 
 ## Editor guide
 
-| Task | How |
-| --- | --- |
-| Draw a room or wall | Open **Build**, choose a tool, then tap a start and end point. For a polygon, tap its corners and return to the first point. |
-| Resize a wall | Select it and drag the endpoint or height arrows. Geometry updates live; release to commit. |
-| Add a door or window | Choose **Add door** or **Add window**, then tap a wall. |
-| Edit an opening | Drag it along its wall in 2D, or use the Move, Width, and Height handles in either view. Choose its style in Properties. |
-| Add furniture | Click a catalog card or drag it into the 2D plan. Select it to adjust dimensions and materials. |
-| Add an outdoor surface | Choose **Draw patio/grass/path/pool/terrain**, then tap two opposite corners. |
-| Use alignment guides | Enable snapping in the bottom toolbar; guides appear during supported 2D placement interactions. |
-| Make space on mobile | Collapse Properties using its heading button; the object stays selected. |
-| Navigate 3D | Orbit, pan, and zoom with gestures or the camera buttons. Use **Reset camera** to return to the overview. |
+| Task                   | How                                                                                                                          |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Draw a room or wall    | Open **Build**, choose a tool, then tap a start and end point. For a polygon, tap its corners and return to the first point. |
+| Resize a wall          | Select it and drag the endpoint or height arrows. Geometry updates live; release to commit.                                  |
+| Add a door or window   | Choose **Add door** or **Add window**, then tap a wall.                                                                      |
+| Edit an opening        | Drag it along its wall in 2D, or use the Move, Width, and Height handles in either view. Choose its style in Properties.     |
+| Add furniture          | Click a catalog card or drag it into the 2D plan. Select it to adjust dimensions and materials.                              |
+| Add an outdoor surface | Choose **Draw patio/grass/path/pool/terrain**, then tap two opposite corners.                                                |
+| Use alignment guides   | Enable snapping in the bottom toolbar; guides appear during supported 2D placement interactions.                             |
+| Make space on mobile   | Collapse Properties using its heading button; the object stays selected.                                                     |
+| Navigate 3D            | Orbit, pan, and zoom with gestures or the camera buttons. Use **Reset camera** to return to the overview.                    |
 
-| Shortcut | Action |
-| --- | --- |
-| Ctrl/Cmd+Z | Undo |
-| Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y | Redo |
-| Ctrl/Cmd+D | Duplicate selected furniture |
-| Ctrl/Cmd+S | Save |
-| Delete | Delete selection; locked furniture is preserved |
-| Escape | Cancel drawing or a handle preview; release selection or exit presentation/walkthrough as applicable |
+| Shortcut                       | Action                                                                                               |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| Ctrl/Cmd+Z                     | Undo                                                                                                 |
+| Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y | Redo                                                                                                 |
+| Ctrl/Cmd+D                     | Duplicate selected furniture                                                                         |
+| Ctrl/Cmd+S                     | Save                                                                                                 |
+| Delete                         | Delete selection; locked furniture is preserved                                                      |
+| Escape                         | Cancel drawing or a handle preview; release selection or exit presentation/walkthrough as applicable |
 
 Local projects are stored in the current browser under `spacesketch-projects-v1`. Export JSON backups before clearing browser data. Local projects do not automatically appear in another browser or device.
 
@@ -138,19 +140,21 @@ The backend uses row-level security and database functions for ownership checks,
 
 Run these from the repository root:
 
-| Command | Purpose |
-| --- | --- |
-| `npm run setup` | Install frontend dependencies from the lockfile |
-| `npm run dev` | Start the development server |
-| `npm run typecheck` | Check TypeScript |
-| `npm run lint` | Run ESLint |
-| `npm test` | Run unit tests |
-| `npm run test:e2e` | Run Playwright browser tests |
-| `npm run test:cloud` | Verify a configured Supabase backend with two dedicated test accounts; see [backend setup](backend/README.md#live-cloud-verification) |
-| `npm run build` | Build for production |
-| `npm start` | Serve the production build; run build first |
+| Command                | Purpose                                                                                                                               |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run setup`        | Install frontend dependencies from the lockfile                                                                                       |
+| `npm run dev`          | Start the development server                                                                                                          |
+| `npm run typecheck`    | Check TypeScript                                                                                                                      |
+| `npm run lint`         | Run ESLint                                                                                                                            |
+| `npm run format`       | Format frontend, backend scripts, and documentation with Prettier                                                                     |
+| `npm run format:check` | Check formatting without changing files                                                                                               |
+| `npm test`             | Run unit tests                                                                                                                        |
+| `npm run test:e2e`     | Run Playwright browser tests                                                                                                          |
+| `npm run test:cloud`   | Verify a configured Supabase backend with two dedicated test accounts; see [backend setup](backend/README.md#live-cloud-verification) |
+| `npm run build`        | Build for production                                                                                                                  |
+| `npm start`            | Serve the production build; run build first                                                                                           |
 
-The last verified feature update passed the production build, lint, **37 unit tests**, and **9 browser tests**. Coverage includes geometry, snapping, schema compatibility, live previews and undo, opening edits, outdoor surfaces, persistence, imports/exports, catalog thumbnails, and mobile controls.
+The last verified feature update passed the production build, lint, **44 unit tests**, and **11 browser tests**. Coverage includes geometry, snapping, schema compatibility, live previews and undo, opening edits, outdoor surfaces, persistence, imports/exports, catalog thumbnails, and mobile controls.
 
 Playwright is configured to use installed **Google Chrome**. It starts a local development server when needed and can reuse an existing one. Screenshots and failure artifacts are written to `frontend/test-results/`, which Git ignores.
 
@@ -165,12 +169,12 @@ npm --prefix frontend audit --omit=dev
 
 For a Vercel deployment, use these project settings:
 
-| Setting | Value |
-| --- | --- |
-| Root directory | `frontend` |
-| Framework | Next.js |
-| Install command | `npm ci` |
-| Build command | `npm run build` |
+| Setting         | Value           |
+| --------------- | --------------- |
+| Root directory  | `frontend`      |
+| Framework       | Next.js         |
+| Install command | `npm ci`        |
+| Build command   | `npm run build` |
 
 Use a Node.js version compatible with the local setup. Configure the two public Supabase variables if cloud features are needed, apply the migration, and add the deployed URL to the Supabase authentication settings. Without Supabase configuration, the app runs in local demo mode.
 

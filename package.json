@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "format": "npm --prefix frontend run format",
+    "format:check": "npm --prefix frontend run format:check",
     "test:cloud": "node backend/scripts/verify-cloud.mjs",
     "setup": "npm --prefix frontend ci",
     "dev": "npm --prefix frontend run dev",

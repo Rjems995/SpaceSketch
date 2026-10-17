@@ -41,7 +41,13 @@ export default function CloudPanel({
   });
   return (
     <div className="modal-backdrop">
-      <div className="modal">
+      <div
+        className="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Share your space"
+        tabIndex={-1}
+      >
         <button
           className="modal-close"
           onClick={close}

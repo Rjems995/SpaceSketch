@@ -694,24 +694,110 @@ footer span {
   margin: 22px 0 0;
   text-align: center;
 }
-.furniture-preview-image { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
-.wall-handles { position: absolute; inset: 0; pointer-events: none; z-index: 4; overflow: hidden; }
-.wall-handle { position: absolute; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 5px; min-width: 44px; min-height: 44px; padding: 6px; border: 2px solid #a66740; border-radius: 12px; background: #fff9ee; color: #684125; box-shadow: 0 2px 8px #30271f33; pointer-events: auto; touch-action: none; user-select: none; }
-.wall-handle span { font-size: 9px; text-align: left; }
-.wall-handle strong { display: block; font-size: 11px; white-space: nowrap; }
-.wall-handle-height { border-color: #52754d; color: #375932; }
-.wall-handle:focus-visible { outline: 3px solid #3f79a7; outline-offset: 2px; }
-.opening-handles .wall-handle { border-color: #40869b; color: #23586b; }
-.properties.is-collapsed .property-body { display: none; }
-.properties.is-collapsed { align-self: flex-start; height: auto; }
-.camera-actions { position: absolute; right: 12px; bottom: 65px; z-index: 3; display: flex; flex-wrap: wrap; max-width: calc(100% - 24px); padding: 3px; gap: 2px; background: #fffdf5eb; border: 1px solid #d4d5c7; border-radius: 10px; }
-.camera-actions button { min-width: 36px; min-height: 40px; display: grid; place-items: center; border-radius: 6px; }
-.camera-actions button:hover { background: #e3e7d9; }
+.furniture-preview-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+.wall-handles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+  overflow: hidden;
+}
+.wall-handle {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 6px;
+  border: 2px solid #a66740;
+  border-radius: 12px;
+  background: #fff9ee;
+  color: #684125;
+  box-shadow: 0 2px 8px #30271f33;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+}
+.wall-handle span {
+  font-size: 9px;
+  text-align: left;
+}
+.wall-handle strong {
+  display: block;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.wall-handle-height {
+  border-color: #52754d;
+  color: #375932;
+}
+.wall-handle:focus-visible {
+  outline: 3px solid #3f79a7;
+  outline-offset: 2px;
+}
+.opening-handles .wall-handle {
+  border-color: #40869b;
+  color: #23586b;
+}
+.properties.is-collapsed .property-body {
+  display: none;
+}
+.properties.is-collapsed {
+  align-self: flex-start;
+  height: auto;
+}
+.camera-actions {
+  position: absolute;
+  right: 12px;
+  bottom: 65px;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  max-width: calc(100% - 24px);
+  padding: 3px;
+  gap: 2px;
+  background: #fffdf5eb;
+  border: 1px solid #d4d5c7;
+  border-radius: 10px;
+}
+.camera-actions button {
+  min-width: 36px;
+  min-height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+}
+.camera-actions button:hover {
+  background: #e3e7d9;
+}
 @media (pointer: coarse) {
-  .camera-actions button, .panel-heading button, .floating-tools button, .view-switch button { min-width: 44px; min-height: 44px; }
-  .property-body input, .property-body select, .property-body button, .build-tools button { min-height: 44px; }
-  .wall-handle { min-width: 48px; min-height: 48px; }
-  .camera-actions { max-width: 156px; }
+  .camera-actions button,
+  .panel-heading button,
+  .floating-tools button,
+  .view-switch button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .property-body input,
+  .property-body select,
+  .property-body button,
+  .build-tools button {
+    min-height: 44px;
+  }
+  .wall-handle {
+    min-width: 48px;
+    min-height: 48px;
+  }
+  .camera-actions {
+    max-width: 156px;
+  }
 }
 
 .workspace {
@@ -1424,5 +1510,78 @@ footer span {
     border: 1px solid var(--border);
     border-radius: 10px;
     box-shadow: 0 8px 40px #20281a22;
+  }
+}
+/* Keyboard focus, readable warnings, and visual material samples. */
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid #246b9b;
+  outline-offset: 3px;
+}
+.finish-library {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.finish-library > p {
+  grid-column: 1 / -1;
+  font-size: 12px;
+}
+.finish-library button {
+  text-align: left;
+  border: 1px solid #bbb;
+  border-radius: 8px;
+  overflow: hidden;
+  padding: 8px;
+  min-height: 100px;
+}
+.finish-library button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.finish-library strong,
+.finish-library small {
+  display: block;
+  font-size: 11px;
+  margin-top: 5px;
+}
+.finish-swatch {
+  display: block;
+  height: 62px;
+  background-size: 100px;
+  background-blend-mode: multiply;
+  border-radius: 4px;
+}
+.design-checks {
+  border-top: 1px solid #d5d1c8;
+  border-bottom: 1px solid #d5d1c8;
+  padding: 10px 0;
+  margin: 12px 0;
+}
+.design-checks p {
+  font-size: 11px;
+  line-height: 1.5;
+}
+.design-checks button {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  text-align: left;
+  color: #9b2020;
+  background: #fff0eb;
+  border-radius: 4px;
+  padding: 8px;
+  margin: 6px 0;
+  font-size: 12px;
+}
+.top-actions select[aria-label="Select design object"] {
+  max-width: 140px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

@@ -42,14 +42,12 @@ function splitAt(p: Project, wall: Wall, values: number[]) {
     throw new Error(
       "A room boundary would split an existing opening. Move the opening before connecting these rooms.",
     );
-  const pieces = cuts
-    .slice(1)
-    .map((t, i) => ({
-      ...structuredClone(wall),
-      id: i === 0 ? wall.id : crypto.randomUUID(),
-      a: lerp(wall.a, wall.b, cuts[i]),
-      b: lerp(wall.a, wall.b, t),
-    }));
+  const pieces = cuts.slice(1).map((t, i) => ({
+    ...structuredClone(wall),
+    id: i === 0 ? wall.id : crypto.randomUUID(),
+    a: lerp(wall.a, wall.b, cuts[i]),
+    b: lerp(wall.a, wall.b, t),
+  }));
   const index = p.walls.findIndex((w) => w.id === wall.id);
   p.walls.splice(index, 1, ...pieces);
   for (const opening of openings) {

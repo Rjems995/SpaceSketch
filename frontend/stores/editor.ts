@@ -33,14 +33,22 @@ export const useEditor = create<State>((set, get) => ({
     const base = get().project;
     if (!base) return;
     const next = structuredClone(base);
-    try { fn(next); } catch { return; }
+    try {
+      fn(next);
+    } catch {
+      return;
+    }
     if (projectSchema.safeParse(next).success) set({ previewProject: next });
   },
   finishPreview: (commit) => {
     const next = get().previewProject;
     set({ previewProject: null });
-    if (commit && next && JSON.stringify(next) !== JSON.stringify(get().project))
-      get().edit(p => Object.assign(p, next));
+    if (
+      commit &&
+      next &&
+      JSON.stringify(next) !== JSON.stringify(get().project)
+    )
+      get().edit((p) => Object.assign(p, next));
   },
   past: [],
   future: [],
@@ -138,7 +146,7 @@ export const useEditor = create<State>((set, get) => ({
     get().edit((p) => {
       p.furniture = p.furniture.filter((o) => !ids.includes(o.id) || o.locked);
       p.walls = p.walls.filter((w) => !ids.includes(w.id));
-      p.surfaces = p.surfaces.filter(o => !ids.includes(o.id));
+      p.surfaces = p.surfaces.filter((o) => !ids.includes(o.id));
       p.measurements = p.measurements.filter((m) => !ids.includes(m.id));
       p.openings = p.openings.filter(
         (o) => !ids.includes(o.id) && p.walls.some((w) => w.id === o.wallId),

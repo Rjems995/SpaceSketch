@@ -32,7 +32,18 @@ export const kinds = [
   "fridge",
   "cabinet",
   "painting",
-  "bench", "lounger", "umbrella", "pergola", "planter", "tree", "hedge", "fence", "grill", "ottoman", "nightstand", "dining",
+  "bench",
+  "lounger",
+  "umbrella",
+  "pergola",
+  "planter",
+  "tree",
+  "hedge",
+  "fence",
+  "grill",
+  "ottoman",
+  "nightstand",
+  "dining",
 ] as const;
 export const furnitureSchema = z.object({
   id: z.string(),
@@ -68,11 +79,21 @@ export const wallSchema = z.object({
   thickness: z.number().min(0.05).max(1),
   material,
 });
-export const surfaceKinds = ["patio", "grass", "path", "pool", "terrain"] as const;
+export const surfaceKinds = [
+  "patio",
+  "grass",
+  "path",
+  "pool",
+  "terrain",
+] as const;
 export const surfaceSchema = z.object({
-  id: z.string(), name: z.string().max(100), kind: z.enum(surfaceKinds),
-  x: point.shape.x, z: point.shape.z,
-  width: z.number().min(0.3).max(100), depth: z.number().min(0.3).max(100),
+  id: z.string(),
+  name: z.string().max(100),
+  kind: z.enum(surfaceKinds),
+  x: point.shape.x,
+  z: point.shape.z,
+  width: z.number().min(0.3).max(100),
+  depth: z.number().min(0.3).max(100),
   elevation: z.number().min(-3).max(3).default(0),
   slope: z.number().min(-2).max(2).default(0),
   rotation: z.number().finite().default(0),
@@ -167,7 +188,17 @@ export const projectSchema = z
     });
     p.openings.forEach((o, i) => {
       const w = p.walls.find((w) => w.id === o.wallId);
-      if (w && p.openings.slice(i + 1).some((other) => other.wallId === o.wallId && Math.abs(other.offset - o.offset) * distance(w.a, w.b) < (other.width + o.width) / 2 - 0.001))
+      if (
+        w &&
+        p.openings
+          .slice(i + 1)
+          .some(
+            (other) =>
+              other.wallId === o.wallId &&
+              Math.abs(other.offset - o.offset) * distance(w.a, w.b) <
+                (other.width + o.width) / 2 - 0.001,
+          )
+      )
         ctx.addIssue({ code: "custom", message: "Openings cannot overlap" });
       if (
         !w ||
@@ -187,7 +218,13 @@ export type Wall = z.infer<typeof wallSchema>;
 export type Point = z.infer<typeof point>;
 export type Surface = z.infer<typeof surfaceSchema>;
 export type Opening = Project["openings"][number];
-export const surfaceColors: Record<Surface["kind"], string> = { patio: "#b9ac96", grass: "#799258", path: "#c4b9a6", pool: "#60b7ca", terrain: "#9b8865" };
+export const surfaceColors: Record<Surface["kind"], string> = {
+  patio: "#b9ac96",
+  grass: "#799258",
+  path: "#c4b9a6",
+  pool: "#60b7ca",
+  terrain: "#9b8865",
+};
 export const mat = (color: string) => ({
   color,
   roughness: 0.75,
@@ -203,18 +240,90 @@ export const catalog: {
   size: [number, number, number];
   color: string;
 }[] = [
-  { kind: "bench", name: "Garden bench", category: "Outdoor", size: [1.6, 0.65, 0.9], color: "#98734f" },
-  { kind: "lounger", name: "Poolside sun lounger", category: "Outdoor", size: [0.8, 2, 0.7], color: "#d6c6a5" },
-  { kind: "umbrella", name: "Patio umbrella", category: "Outdoor", size: [2.6, 2.6, 2.5], color: "#eadcc4" },
-  { kind: "pergola", name: "Timber pergola", category: "Outdoor", size: [3, 3, 2.6], color: "#a38058" },
-  { kind: "planter", name: "Raised garden planter", category: "Outdoor", size: [1.2, 0.55, 0.7], color: "#678453" },
-  { kind: "tree", name: "Garden tree", category: "Outdoor", size: [2, 2, 3.5], color: "#64804e" },
-  { kind: "hedge", name: "Privacy hedge", category: "Outdoor", size: [2, 0.65, 1.5], color: "#557044" },
-  { kind: "fence", name: "Timber garden fence", category: "Outdoor", size: [2, 0.15, 1.2], color: "#aa8961" },
-  { kind: "grill", name: "Outdoor barbecue grill", category: "Outdoor", size: [1.1, 0.6, 1.1], color: "#45494a" },
-  { kind: "ottoman", name: "Upholstered ottoman", category: "Living", size: [0.85, 0.65, 0.45], color: "#b39479" },
-  { kind: "nightstand", name: "Bedside drawer table", category: "Bedroom", size: [0.5, 0.4, 0.55], color: "#b09476" },
-  { kind: "dining", name: "Rectangular dining table", category: "Kitchen", size: [1.8, 0.9, 0.76], color: "#98734f" },
+  {
+    kind: "bench",
+    name: "Garden bench",
+    category: "Outdoor",
+    size: [1.6, 0.65, 0.9],
+    color: "#98734f",
+  },
+  {
+    kind: "lounger",
+    name: "Poolside sun lounger",
+    category: "Outdoor",
+    size: [0.8, 2, 0.7],
+    color: "#d6c6a5",
+  },
+  {
+    kind: "umbrella",
+    name: "Patio umbrella",
+    category: "Outdoor",
+    size: [2.6, 2.6, 2.5],
+    color: "#eadcc4",
+  },
+  {
+    kind: "pergola",
+    name: "Timber pergola",
+    category: "Outdoor",
+    size: [3, 3, 2.6],
+    color: "#a38058",
+  },
+  {
+    kind: "planter",
+    name: "Raised garden planter",
+    category: "Outdoor",
+    size: [1.2, 0.55, 0.7],
+    color: "#678453",
+  },
+  {
+    kind: "tree",
+    name: "Garden tree",
+    category: "Outdoor",
+    size: [2, 2, 3.5],
+    color: "#64804e",
+  },
+  {
+    kind: "hedge",
+    name: "Privacy hedge",
+    category: "Outdoor",
+    size: [2, 0.65, 1.5],
+    color: "#557044",
+  },
+  {
+    kind: "fence",
+    name: "Timber garden fence",
+    category: "Outdoor",
+    size: [2, 0.15, 1.2],
+    color: "#aa8961",
+  },
+  {
+    kind: "grill",
+    name: "Outdoor barbecue grill",
+    category: "Outdoor",
+    size: [1.1, 0.6, 1.1],
+    color: "#45494a",
+  },
+  {
+    kind: "ottoman",
+    name: "Upholstered ottoman",
+    category: "Living",
+    size: [0.85, 0.65, 0.45],
+    color: "#b39479",
+  },
+  {
+    kind: "nightstand",
+    name: "Bedside drawer table",
+    category: "Bedroom",
+    size: [0.5, 0.4, 0.55],
+    color: "#b09476",
+  },
+  {
+    kind: "dining",
+    name: "Rectangular dining table",
+    category: "Kitchen",
+    size: [1.8, 0.9, 0.76],
+    color: "#98734f",
+  },
   {
     kind: "sofa",
     name: "Linen three-seat sofa",
@@ -403,6 +512,57 @@ export function template(name = "Living Room"): Project {
     measurements: [],
     units: "m",
   };
+  if (name === "Outdoor Patio") {
+    p.surfaces = [
+      {
+        id: crypto.randomUUID(),
+        name: "Lawn",
+        kind: "grass",
+        x: 3.5,
+        z: 2.5,
+        width: 10,
+        depth: 8,
+        elevation: -0.02,
+        slope: 0,
+        rotation: 0,
+        color: "#799258",
+      },
+      {
+        id: crypto.randomUUID(),
+        name: "Dining patio",
+        kind: "patio",
+        x: 2,
+        z: 2.5,
+        width: 4,
+        depth: 4,
+        elevation: 0,
+        slope: 0,
+        rotation: 0,
+        color: "#b9ac96",
+      },
+      {
+        id: crypto.randomUUID(),
+        name: "Garden path",
+        kind: "path",
+        x: 5,
+        z: 2.5,
+        width: 1,
+        depth: 7,
+        elevation: 0,
+        slope: 0,
+        rotation: 0,
+        color: "#c4b9a6",
+      },
+    ];
+    p.furniture = [
+      makeFurniture("dining", 2, 2.5),
+      makeFurniture("bench", 6.8, 1),
+      makeFurniture("planter", 0.5, 0.5),
+      makeFurniture("grill", 2, 4.8),
+      makeFurniture("lounger", 6.8, 3.8),
+    ];
+    return p;
+  }
   addRoom(p, 0, 0, 7, 5);
   p.rooms[0].name = name;
   p.rooms[0].material.texture =

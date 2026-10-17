@@ -1,4 +1,5 @@
 "use client";
+import DesignMaterial from "./design-material";
 import * as THREE from "three";
 import { RoundedBox } from "@react-three/drei";
 import type { Furniture } from "@/lib/model";
@@ -6,22 +7,35 @@ function SoftBox({
   position,
   size,
   color,
+  material,
   roughness = 0.7,
   metalness = 0,
 }: {
   position: [number, number, number];
   size: [number, number, number];
   color: string;
+  material?: Furniture["material"];
   roughness?: number;
   metalness?: number;
 }) {
   return (
-    <RoundedBox position={position} args={size} radius={Math.min(0.045, ...size.map(n => n * 0.15))} smoothness={2} castShadow receiveShadow>
-      <meshStandardMaterial
-        color={color}
-        roughness={roughness}
-        metalness={metalness}
-      />
+    <RoundedBox
+      position={position}
+      args={size}
+      radius={Math.min(0.045, ...size.map((n) => n * 0.15))}
+      smoothness={2}
+      castShadow
+      receiveShadow
+    >
+      {material ? (
+        <DesignMaterial material={material} color={color} />
+      ) : (
+        <meshStandardMaterial
+          color={color}
+          roughness={roughness}
+          metalness={metalness}
+        />
+      )}
     </RoundedBox>
   );
 }
@@ -36,6 +50,7 @@ export function FurnitureModel({ o }: { o: Furniture }) {
       position={p}
       size={s}
       color={c}
+      material={c === m.color ? m : undefined}
       roughness={m.roughness}
       metalness={m.metalness}
     />
@@ -64,18 +79,59 @@ export function FurnitureModel({ o }: { o: Furniture }) {
         </>
       ) : k === "pergola" ? (
         <>
-          {[-1, 1].flatMap(x => [-1, 1].map(z => <SoftBox key={`${x}${z}`} position={[x * (w / 2 - 0.07), h / 2, z * (d / 2 - 0.07)]} size={[0.14, h, 0.14]} color={m.color} />))}
-          {[-1, 1].map(z => <SoftBox key={z} position={[0, h - 0.15, z * (d / 2 - 0.07)]} size={[w, 0.18, 0.14]} color={m.color} />)}
-          {Array.from({ length: 8 }, (_, i) => <SoftBox key={i} position={[(i / 7 - 0.5) * (w - 0.12), h - 0.05, 0]} size={[0.12, 0.1, d]} color={m.color} />)}
+          {[-1, 1].flatMap((x) =>
+            [-1, 1].map((z) => (
+              <SoftBox
+                key={`${x}${z}`}
+                position={[x * (w / 2 - 0.07), h / 2, z * (d / 2 - 0.07)]}
+                size={[0.14, h, 0.14]}
+                color={m.color}
+              />
+            )),
+          )}
+          {[-1, 1].map((z) => (
+            <SoftBox
+              key={z}
+              position={[0, h - 0.15, z * (d / 2 - 0.07)]}
+              size={[w, 0.18, 0.14]}
+              color={m.color}
+            />
+          ))}
+          {Array.from({ length: 8 }, (_, i) => (
+            <SoftBox
+              key={i}
+              position={[(i / 7 - 0.5) * (w - 0.12), h - 0.05, 0]}
+              size={[0.12, 0.1, d]}
+              color={m.color}
+            />
+          ))}
         </>
       ) : k === "fence" ? (
         <>
-          {[0.3, 0.7].map(y => <SoftBox key={y} position={[0, h * y, 0]} size={[w, h * 0.1, d * 0.6]} color={m.color} />)}
-          {Array.from({ length: 11 }, (_, i) => <SoftBox key={i} position={[(i / 10 - 0.5) * (w - w / 16), h / 2, 0]} size={[w / 16, h, d]} color={m.color} />)}
+          {[0.3, 0.7].map((y) => (
+            <SoftBox
+              key={y}
+              position={[0, h * y, 0]}
+              size={[w, h * 0.1, d * 0.6]}
+              color={m.color}
+            />
+          ))}
+          {Array.from({ length: 11 }, (_, i) => (
+            <SoftBox
+              key={i}
+              position={[(i / 10 - 0.5) * (w - w / 16), h / 2, 0]}
+              size={[w / 16, h, d]}
+              color={m.color}
+            />
+          ))}
         </>
       ) : k === "hedge" || k === "planter" ? (
         <>
-          {box([0, h * 0.22, 0], [w, h * 0.44, d], k === "planter" ? "#947251" : "#67553b")}
+          {box(
+            [0, h * 0.22, 0],
+            [w, h * 0.44, d],
+            k === "planter" ? "#947251" : "#67553b",
+          )}
           {box([0, h * 0.7, 0], [w * 0.94, h * 0.6, d * 0.94])}
         </>
       ) : k === "grill" ? (
@@ -86,7 +142,10 @@ export function FurnitureModel({ o }: { o: Furniture }) {
           {box([0, h * 0.85, d * 0.49], [w * 0.45, 0.035, 0.035], "#c4c4bd")}
         </>
       ) : k === "ottoman" ? (
-        <>{legs(h * 0.2)}{box([0, h * 0.6, 0], [w, h * 0.8, d])}</>
+        <>
+          {legs(h * 0.2)}
+          {box([0, h * 0.6, 0], [w, h * 0.8, d])}
+        </>
       ) : k === "lounger" ? (
         <>
           {legs(h * 0.4)}
@@ -94,19 +153,43 @@ export function FurnitureModel({ o }: { o: Furniture }) {
           <group position={[0, h * 0.7, -d * 0.32]} rotation={[-0.65, 0, 0]}>
             {box([0, 0, 0], [w, h * 0.65, d * 0.08])}
           </group>
-          {box([0, h * 0.54, d * 0.12], [w * 0.94, h * 0.06, d * 0.69], "#f1e9d8")}
+          {box(
+            [0, h * 0.54, d * 0.12],
+            [w * 0.94, h * 0.06, d * 0.69],
+            "#f1e9d8",
+          )}
         </>
       ) : k === "bench" ? (
         <>
           {legs(h * 0.4)}
-          {[0, 1, 2, 3].map(i => <SoftBox key={i} position={[0, h * 0.45, (i / 3 - 0.5) * d * 0.85]} size={[w, h * 0.1, d * 0.2]} color={m.color} />)}
-          {[0, 1, 2].map(i => <SoftBox key={i} position={[0, h * (0.6 + i * 0.16), -d * 0.4]} size={[w, h * 0.12, d * 0.12]} color={m.color} />)}
+          {[0, 1, 2, 3].map((i) => (
+            <SoftBox
+              key={i}
+              position={[0, h * 0.45, (i / 3 - 0.5) * d * 0.85]}
+              size={[w, h * 0.1, d * 0.2]}
+              color={m.color}
+            />
+          ))}
+          {[0, 1, 2].map((i) => (
+            <SoftBox
+              key={i}
+              position={[0, h * (0.6 + i * 0.16), -d * 0.4]}
+              size={[w, h * 0.12, d * 0.12]}
+              color={m.color}
+            />
+          ))}
         </>
       ) : k === "sofa" || k === "chair" ? (
         <>
-          {[-1, 1].map(x => <group key={x} position={[x * w * 0.3, h * 0.78, -d * 0.22]} rotation={[0.15, 0, x * 0.12]}>
-            {box([0, 0, 0], [w * 0.2, h * 0.3, d * 0.13], "#e9dfcb")}
-          </group>)}
+          {[-1, 1].map((x) => (
+            <group
+              key={x}
+              position={[x * w * 0.3, h * 0.78, -d * 0.22]}
+              rotation={[0.15, 0, x * 0.12]}
+            >
+              {box([0, 0, 0], [w * 0.2, h * 0.3, d * 0.13], "#e9dfcb")}
+            </group>
+          ))}
           {box([0, h * 0.36, 0], [w, d * 0.05 + h * 0.25, d])}
           {box([0, h * 0.72, -d * 0.4], [w, h * 0.56, d * 0.2])}
           {[-1, 1].map((x) => (
@@ -202,7 +285,20 @@ export function FurnitureModel({ o }: { o: Furniture }) {
         </>
       ) : k === "shelf" ? (
         <>
-          {[0, 1, 2].flatMap(row => [0, 1, 2, 3].map(i => <SoftBox key={`${row}-${i}`} position={[-w * 0.28 + i * w * 0.13, h * (0.12 + row * 0.25), 0]} size={[w * 0.09, h * 0.17, d * 0.65]} color={["#7d8b73", "#c6a57c", "#a06d55", "#ded5c3"][i]} />))}
+          {[0, 1, 2].flatMap((row) =>
+            [0, 1, 2, 3].map((i) => (
+              <SoftBox
+                key={`${row}-${i}`}
+                position={[
+                  -w * 0.28 + i * w * 0.13,
+                  h * (0.12 + row * 0.25),
+                  0,
+                ]}
+                size={[w * 0.09, h * 0.17, d * 0.65]}
+                color={["#7d8b73", "#c6a57c", "#a06d55", "#ded5c3"][i]}
+              />
+            )),
+          )}
           {[-1, 1].map((x) => (
             <SoftBox
               key={x}
@@ -252,10 +348,19 @@ export function FurnitureModel({ o }: { o: Furniture }) {
       ) : k === "nightstand" || k === "cabinet" ? (
         <>
           {box([0, h * 0.52, 0], [w, h * 0.92, d])}
-          {[0, 1].map(i => <group key={i}>
-            {box([0, h * (0.3 + i * 0.45), d * 0.51], [w * 0.9, h * 0.39, 0.025])}
-            {box([0, h * (0.3 + i * 0.45), d * 0.55], [w * 0.25, 0.025, 0.025], "#493f35")}
-          </group>)}
+          {[0, 1].map((i) => (
+            <group key={i}>
+              {box(
+                [0, h * (0.3 + i * 0.45), d * 0.51],
+                [w * 0.9, h * 0.39, 0.025],
+              )}
+              {box(
+                [0, h * (0.3 + i * 0.45), d * 0.55],
+                [w * 0.25, 0.025, 0.025],
+                "#493f35",
+              )}
+            </group>
+          ))}
           {legs(h * 0.1)}
         </>
       ) : (
@@ -281,6 +386,25 @@ export function FurnitureModel({ o }: { o: Furniture }) {
   );
 }
 
-export function Box({ position, size, color }: { position: [number, number, number]; size: [number, number, number]; color: string }) {
-  return <mesh position={position} castShadow receiveShadow><boxGeometry args={size} /><meshStandardMaterial color={color} roughness={0.7} /></mesh>;
+export function Box({
+  position,
+  size,
+  color,
+  material,
+}: {
+  position: [number, number, number];
+  size: [number, number, number];
+  color: string;
+  material?: Furniture["material"];
+}) {
+  return (
+    <mesh position={position} castShadow receiveShadow>
+      <boxGeometry args={size} />
+      {material ? (
+        <DesignMaterial material={material} color={color} />
+      ) : (
+        <meshStandardMaterial color={color} roughness={0.7} />
+      )}
+    </mesh>
+  );
 }
