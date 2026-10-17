@@ -126,3 +126,22 @@ export function moveWallEndpoint(
     r.points = r.points.map(convert);
   });
 }
+
+export function moveRoomCorner(
+  p: Project,
+  roomId: string,
+  index: number,
+  next: Point,
+) {
+  const room = p.rooms.find((r) => r.id === roomId);
+  if (!room?.points[index]) return;
+  const old = room.points[index];
+  const convert = (q: Point) => (distance(old, q) < 0.001 ? { ...next } : q);
+  p.rooms.forEach((r) => {
+    r.points = r.points.map(convert);
+  });
+  p.walls.forEach((w) => {
+    w.a = convert(w.a);
+    w.b = convert(w.b);
+  });
+}

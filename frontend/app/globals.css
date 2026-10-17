@@ -1585,3 +1585,83 @@ footer span {
     scroll-behavior: auto !important;
   }
 }
+.floor-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+  font-size: 11px;
+  background: #fffefbf5;
+  padding: 8px;
+  border-radius: 6px;
+  max-width: 100%;
+}
+.floor-controls > label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+.floor-controls select {
+  max-width: 160px;
+  padding: 6px;
+  min-height: 36px;
+}
+.floor-controls summary {
+  cursor: pointer;
+  padding: 8px;
+}
+.floor-options {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: #fffefb;
+  border: 1px solid #ddd;
+  padding: 14px;
+  width: 230px;
+  z-index: 20;
+  box-shadow: 0 4px 18px #0002;
+}
+.floor-options label {
+  display: block;
+  margin: 10px 0;
+}
+.floor-options input {
+  display: block;
+  width: 100%;
+  border: 1px solid #ccc;
+  padding: 8px;
+  margin-top: 4px;
+}
+.floor-options button {
+  min-height: 40px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.corner-editor {
+  margin: 12px 0;
+  padding: 10px 0;
+  border-bottom: 1px solid #ddd;
+}
+.corner-editor summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.corner-editor p {
+  font-size: 11px;
+  line-height: 1.5;
+}
+@media (max-width: 600px) {
+  .floor-controls {
+    gap: 2px;
+    font-size: 10px;
+    padding: 4px;
+  }
+  .floor-controls select {
+    max-width: 120px;
+  }
+  .workspace-top:has(.floor-controls) .area-badge {
+    display: none;
+  }
+}

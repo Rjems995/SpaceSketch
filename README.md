@@ -30,7 +30,10 @@ On Windows PowerShell, use `npm.cmd` if execution policy blocks `npm.ps1`.
 ### Rooms, walls, and openings
 
 - Eight starter layouts, including furnished bedrooms, kitchens, offices, a two-room studio apartment, and an outdoor patio with lawn and a path.
+- Up to 20 independent floors with names, elevations, switching, deletion, and undo. Older projects open as the ground floor; shared links include a read-only floor selector.
 - Rectangular and polygon rooms, connected walls, wall splitting, room resizing, and visibility controls.
+- Drag numbered room-corner handles in 2D or edit coordinates in Properties. Connected boundaries follow, and invalid room polygons are rejected.
+- Draw a curved wall with three clicks (start, control point, end), or bend a selected wall using **Curve this wall**. Curves use 16 connected editable segments; bending a room wall also reshapes its floor.
 - Live wall resizing with handles at both endpoints and the top in 3D; endpoint and height controls in 2D. Connected room boundaries follow the changes.
 - Draggable windows and doors with width, height, sill, and position controls. Choose classic, sliding, or double styles.
 - Opening fit and overlap validation. Live handle previews keep the last valid geometry, support Escape cancellation, and commit one undo step on release.
@@ -38,7 +41,8 @@ On Windows PowerShell, use `npm.cmd` if execution policy blocks `npm.ps1`.
 
 ### Furniture and materials
 
-- **28 furniture types** with rendered 3D catalog thumbnails and icon fallbacks.
+- **29 furniture types** with rendered 3D catalog thumbnails and icon fallbacks.
+- Adjustable straight staircases: edit width, run (depth), rise (height), rotation, and finish.
 - Indoor pieces plus garden benches, loungers, umbrellas, pergolas, planters, trees, hedges, fences, and a barbecue.
 - Move, resize, rotate, duplicate, lock, delete, and group-drag furniture. Use transform gizmos in 3D or precise property inputs.
 - Visual material library with oak/walnut, tile, concrete, fabric, plaster, and paint presets. Apply finishes to rooms, walls, and procedural furniture; imported models retain their embedded materials.
@@ -63,7 +67,7 @@ These are editable design surfaces. Terrain sculpting, excavation, and pool simu
 ### Saving and sharing
 
 - Local autosave, interrupted-session recovery, revision checks, and up to 100 undo steps.
-- Export JSON backups, PDF floor plans with wall/opening dimensions and custom measurements, high-resolution PNG/JPEG views (up to 3840 pixels wide), and GLB geometry. Images retain the viewport aspect ratio; image and GLB exports require a visible 3D view.
+- Export JSON backups, PDF floor plans for the current floor with wall/opening dimensions and custom measurements, high-resolution PNG/JPEG views (up to 3840 pixels wide), and GLB geometry for the current floor. JSON backups retain every floor. Images retain the viewport aspect ratio; image and GLB exports require a visible 3D view.
 - Optional Supabase sign-in, cloud save/load, historical versions, and revocable read-only sharing links.
 
 ## Editor guide
@@ -154,7 +158,7 @@ Run these from the repository root:
 | `npm run build`        | Build for production                                                                                                                  |
 | `npm start`            | Serve the production build; run build first                                                                                           |
 
-The last verified feature update passed the production build, lint, **44 unit tests**, and **11 browser tests**. Coverage includes geometry, snapping, schema compatibility, live previews and undo, opening edits, outdoor surfaces, persistence, imports/exports, catalog thumbnails, and mobile controls.
+The last verified feature update passed the production build, lint, **51 unit tests**, and **14 browser tests**. Coverage includes geometry, snapping, schema compatibility, live previews and undo, opening edits, outdoor surfaces, persistence, imports/exports, catalog thumbnails, and mobile controls.
 
 Playwright is configured to use installed **Google Chrome**. It starts a local development server when needed and can reuse an existing one. Screenshots and failure artifacts are written to `frontend/test-results/`, which Git ignores.
 
@@ -180,7 +184,9 @@ Use a Node.js version compatible with the local setup. Configure the two public 
 
 ## Current limitations
 
-- No multiple floors, full constraint solver, viewport rulers, or automatic placement suggestions.
+- Floors are shown separately, not as a stacked whole-building view. Elevation is floor metadata; staircases are visual models, without automatic ceiling cutouts or stair walking physics.
+- Curves are segmented approximations. Openings must fit within an individual segment; remove openings before bending a wall. Standalone curves do not automatically create a room floor.
+- No full constraint solver, viewport rulers, or automatic placement suggestions.
 - Standalone wall loops do not automatically create floors. Use the polygon room tool; overlapping room floors are not merged automatically.
 - Collision warnings do not prevent every overlap. Walkthrough uses simplified collision geometry and is intended for desktop use.
 - Outdoor surfaces are rectangular; terrain supports a linear slope rather than freeform sculpting. Walkthrough does not simulate terrain or water physics.

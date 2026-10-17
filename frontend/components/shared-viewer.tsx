@@ -2,6 +2,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import FloorControls from "./floor-controls";
 import BrandLogo from "./brand-logo";
 import { supabase } from "@/lib/supabase";
 import { projectSchema } from "@/lib/model";
@@ -39,6 +40,7 @@ export default function SharedViewer({ token }: { token: string }) {
           <BrandLogo />
         </Link>
         <span>{p?.name}</span>
+        {loaded && <FloorControls readOnly />}
         <span className="top-tagline">Read-only design</span>
       </header>
       <div style={{ height: "calc(100dvh - 74px)" }}>
@@ -46,6 +48,7 @@ export default function SharedViewer({ token }: { token: string }) {
           <div className="empty">{error}</div>
         ) : loaded ? (
           <Scene
+            key={p?.activeFloor?.id ?? "ground"}
             preset="Isometric"
             walk={false}
             quality="High"

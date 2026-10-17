@@ -68,7 +68,18 @@ export function FurnitureModel({ o }: { o: Furniture }) {
     );
   return (
     <group>
-      {k === "umbrella" ? (
+      {k === "stairs" ? (
+        <group>
+          {Array.from({ length: 16 }, (_, i) => (
+            <group key={i}>
+              {box(
+                [0, (h * (i + 1)) / 32, d / 2 - (d * (i + 0.5)) / 16],
+                [w, (h * (i + 1)) / 16, d / 16 + 0.005],
+              )}
+            </group>
+          ))}
+        </group>
+      ) : k === "umbrella" ? (
         <>
           {box([0, h * 0.45, 0], [0.06, h * 0.9, 0.06], "#73614c")}
           {box([0, 0.04, 0], [w * 0.22, 0.08, d * 0.22], "#555653")}

@@ -10,6 +10,8 @@ import {
   Transformer,
 } from "react-konva";
 import { placementChecks } from "@/lib/placement-checks";
+import { addCurvedWall, curvePoints } from "@/lib/curves";
+import { moveRoomCorner } from "@/lib/rooms";
 import Konva from "konva";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useEditor } from "@/stores/editor";
@@ -58,6 +60,7 @@ export default function FloorPlan() {
   useEffect(() => {
     setGuides([]);
     setStart(null);
+    setPolygon([]);
   }, [s.tool, s.snapping]);
   // Omit minor lines when zoomed out, retaining exact multiples of the snap grid.
   const displayStep =
@@ -116,6 +119,14 @@ export default function FloorPlan() {
   };
   const click = () => {
     const q = point();
+    if (s.tool === "curve") {
+      if (polygon.length < 2) setPolygon([...polygon, q]);
+      else {
+        s.edit((p) => addCurvedWall(p, polygon[0], polygon[1], q));
+        setPolygon([]);
+      }
+      return;
+    }
     if (s.tool.startsWith("surface:")) {
       if (!start) {
         setStart(q);
@@ -204,6 +215,7 @@ export default function FloorPlan() {
       if (e.key === "Escape") {
         setStart(null);
         setPolygon([]);
+        useEditor.getState().finishPreview(false);
       }
     };
     window.addEventListener("keydown", cancel);
@@ -409,7 +421,12 @@ export default function FloorPlan() {
                   closed
                   fill={r.material.color}
                   opacity={0.35}
-                  onClick={() => s.select(r.id)}
+                  onPointerDown={(e) => {
+                    if (s.tool === "select") {
+                      e.cancelBubble = true;
+                      s.select(r.id);
+                    }
+                  }}
                 />
                 <Text
                   x={r.points[0].x + 0.3}
@@ -485,13 +502,27 @@ export default function FloorPlan() {
                   }
                 }}
               />
-              <Text
-                x={(w.a.x + w.b.x) / 2 + 0.12}
-                y={(w.a.z + w.b.z) / 2 - 0.25}
-                text={format(distance(w.a, w.b), p.units)}
-                fontSize={0.13}
-                fill="#686a60"
-              />
+              {(!w.curveId ||
+                p.walls.filter((v) => v.curveId === w.curveId)[
+                  Math.floor(
+                    p.walls.filter((v) => v.curveId === w.curveId).length / 2,
+                  )
+                ]?.id === w.id) && (
+                <Text
+                  x={(w.a.x + w.b.x) / 2 + 0.12}
+                  y={(w.a.z + w.b.z) / 2 - 0.25}
+                  text={format(
+                    w.curveId
+                      ? p.walls
+                          .filter((v) => v.curveId === w.curveId)
+                          .reduce((n, v) => n + distance(v.a, v.b), 0)
+                      : distance(w.a, w.b),
+                    p.units,
+                  )}
+                  fontSize={0.13}
+                  fill="#686a60"
+                />
+              )}
             </Group>
           ))}
           {visibleDesign(p).openings.map((o) => {
@@ -702,6 +733,75 @@ export default function FloorPlan() {
                 dash={[0.1, 0.1]}
               />
             ))}
+          {s.tool === "curve" && polygon.length > 0 && cursor && (
+            <Line
+              listening={false}
+              points={(polygon.length === 2
+                ? curvePoints(polygon[0], polygon[1], cursor)
+                : [polygon[0], cursor]
+              ).flatMap((q) => [q.x, q.z])}
+              stroke="#246b9b"
+              strokeWidth={0.06}
+              dash={[0.12, 0.06]}
+            />
+          )}
+          {s.tool === "select" &&
+            p.rooms
+              .filter((r) => r.visible && s.selected.includes(r.id))
+              .flatMap((room) =>
+                room.points.map((q, i) => (
+                  <Group key={room.id + i}>
+                    <Circle
+                      x={q.x}
+                      y={q.z}
+                      radius={Math.max(0.1, 10 / zoom)}
+                      fill="#ffffff"
+                      stroke="#246b9b"
+                      strokeWidth={0.03}
+                      draggable
+                      onMouseDown={(e) => {
+                        e.cancelBubble = true;
+                      }}
+                      onTouchStart={(e) => {
+                        e.cancelBubble = true;
+                      }}
+                      onDragStart={(e) => {
+                        e.cancelBubble = true;
+                      }}
+                      onDragMove={(e) => {
+                        e.cancelBubble = true;
+                        const next = {
+                          x: s.snapping
+                            ? snap(e.target.x(), s.gridStep)
+                            : e.target.x(),
+                          z: s.snapping
+                            ? snap(e.target.y(), s.gridStep)
+                            : e.target.y(),
+                        };
+                        s.preview((p) => moveRoomCorner(p, room.id, i, next));
+                      }}
+                      onDragEnd={(e) => {
+                        e.cancelBubble = true;
+                        s.finishPreview(true);
+                        const saved = useEditor
+                          .getState()
+                          .project!.rooms.find((r) => r.id === room.id)!.points[
+                          i
+                        ];
+                        e.target.position({ x: saved.x, y: saved.z });
+                      }}
+                    />
+                    <Text
+                      listening={false}
+                      x={q.x + 0.14}
+                      y={q.z - 0.18}
+                      text={String(i + 1)}
+                      fontSize={0.16}
+                      fill="#246b9b"
+                    />
+                  </Group>
+                )),
+              )}
           {guides.map((g, i) => (
             <Group key={i} listening={false}>
               <Line
@@ -851,7 +951,9 @@ export default function FloorPlan() {
                 ? "Drag the canvas to pan"
                 : s.tool === "polygon"
                   ? "Click corners, then the first point to close the room"
-                  : "Click a start point, then an end point"}{" "}
+                  : s.tool === "curve"
+                    ? "Click start, a bend control point, then end. Escape cancels."
+                    : "Click a start point, then an end point"}{" "}
         · Scroll to zoom
       </div>
     </div>

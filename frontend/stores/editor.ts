@@ -107,6 +107,11 @@ export const useEditor = create<State>((set, get) => ({
           revision: s.project!.revision,
           cloudRevision: s.project!.cloudRevision,
         },
+        previewProject: null,
+        selected:
+          s.past.at(-1)?.activeFloor?.id !== s.project?.activeFloor?.id
+            ? []
+            : s.selected,
         past: s.past.slice(0, -1),
         future: [s.project!, ...s.future],
         status: "Unsaved changes",
@@ -122,6 +127,11 @@ export const useEditor = create<State>((set, get) => ({
           cloudRevision: s.project!.cloudRevision,
         },
         past: [...s.past, s.project!],
+        previewProject: null,
+        selected:
+          s.future[0]?.activeFloor?.id !== s.project?.activeFloor?.id
+            ? []
+            : s.selected,
         future: s.future.slice(1),
         status: "Unsaved changes",
       });

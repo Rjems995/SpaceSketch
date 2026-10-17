@@ -2,6 +2,7 @@ import type { Furniture } from "@/lib/model";
 
 // Each symbol uses the same 24-unit grid and stroke weight.
 const outlines: Record<Furniture["kind"], string> = {
+  stairs: "M3 21V17H7V13H11V9H15V5H21M3 21H21V5",
   sofa: "M5 11V7Q5 5 7 5H17Q19 5 19 7V11M5 16H19M5 11H3V18H21V11H19V14H5ZM5 18V21M19 18V21M12 6V13",
   chair: "M7 12V5H17V12M5 11V17H19V11M5 15H19M7 17V21M17 17V21",
   table: "M3 8C3 4 21 4 21 8C21 12 3 12 3 8ZM5 10V19M19 10V19M12 11V21",

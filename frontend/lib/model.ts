@@ -44,6 +44,7 @@ export const kinds = [
   "ottoman",
   "nightstand",
   "dining",
+  "stairs",
 ] as const;
 export const furnitureSchema = z.object({
   id: z.string(),
@@ -73,6 +74,7 @@ export const furnitureSchema = z.object({
 });
 export const wallSchema = z.object({
   id: z.string(),
+  curveId: z.string().optional(),
   a: point,
   b: point,
   height: z.number().min(0.5).max(6),
@@ -99,7 +101,7 @@ export const surfaceSchema = z.object({
   rotation: z.number().finite().default(0),
   color: z.string().regex(/^#[0-9a-f]{6}$/i),
 });
-export const projectSchema = z
+const singleFloorSchema = z
   .object({
     schemaVersion: z.literal(1),
     id: z.string().uuid(),
@@ -212,6 +214,30 @@ export const projectSchema = z
         });
     });
   });
+const floorInfoSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1).max(60),
+  elevation: z.number().min(-30).max(100),
+});
+export const projectSchema = singleFloorSchema
+  .and(
+    z.object({
+      activeFloor: floorInfoSchema.optional(),
+      floors: z
+        .array(z.object({ info: floorInfoSchema, plan: singleFloorSchema }))
+        .max(19)
+        .optional(),
+    }),
+  )
+  .superRefine((p, ctx) => {
+    const ids = [
+      p.activeFloor?.id ?? "ground",
+      ...(p.floors ?? []).map((f) => f.info.id),
+    ];
+    if (new Set(ids).size !== ids.length)
+      ctx.addIssue({ code: "custom", message: "Floor IDs must be unique" });
+  });
+export const floorPlanSchema = singleFloorSchema;
 export type Project = z.infer<typeof projectSchema>;
 export type Furniture = z.infer<typeof furnitureSchema>;
 export type Wall = z.infer<typeof wallSchema>;
@@ -240,6 +266,13 @@ export const catalog: {
   size: [number, number, number];
   color: string;
 }[] = [
+  {
+    kind: "stairs",
+    name: "Straight staircase",
+    category: "Living",
+    size: [1.1, 3.6, 3],
+    color: "#b39875",
+  },
   {
     kind: "bench",
     name: "Garden bench",

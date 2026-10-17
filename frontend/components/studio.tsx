@@ -66,6 +66,9 @@ import FurnitureIcon from "./furniture-icon";
 import BrandLogo from "./brand-logo";
 import type { PreviewImages } from "./furniture-previews";
 import { useDialogFocus } from "./use-dialog-focus";
+import FloorControls from "./floor-controls";
+import RoomCorners from "./room-corners";
+import CurveWallControls from "./curve-wall-controls";
 import MaterialPicker from "./material-picker";
 import DesignChecks from "./design-checks";
 import Image from "next/image";
@@ -261,7 +264,11 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
         const { jsPDF } = await import("jspdf");
         const doc = new jsPDF({ orientation: "landscape" });
         doc.setFontSize(20);
-        doc.text(p.name, 15, 18);
+        doc.text(
+          p.name + " - " + (p.activeFloor?.name ?? "Ground floor"),
+          15,
+          18,
+        );
         doc.setFontSize(10);
         doc.text(
           `${p.rooms.reduce((a, r) => a + area(r.points), 0).toFixed(1)} m² · Exported ${new Date().toLocaleDateString()}`,
@@ -558,7 +565,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                   Export ↗
                 </option>
                 <option value="json">JSON backup</option>
-                <option value="pdf">PDF floor plan</option>
+                <option value="pdf">PDF current floor</option>
                 <option value="png">PNG image (3840 px)</option>
                 <option value="jpg">JPEG image (3840 px)</option>
                 <option value="glb">GLB scene</option>
@@ -1038,6 +1045,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                     { id: "pan", name: "Pan canvas", icon: Hand },
                     { id: "room", name: "Rectangular room", icon: Square },
                     { id: "polygon", name: "Custom polygon room", icon: Home },
+                    { id: "curve", name: "Draw curved wall", icon: Home },
                     { id: "wall", name: "Draw connected walls", icon: Home },
                     { id: "door", name: "Add door", icon: Box },
                     { id: "window", name: "Add window", icon: Grid2X2 },
@@ -1122,11 +1130,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
             </aside>
             <section className="workspace">
               <div className="workspace-top">
-                <div className="breadcrumb">
-                  <Home size={14} />
-                  <span>{p.rooms[0]?.name || "Floor plan"}</span>
-                  <ChevronDown size={13} />
-                </div>
+                <FloorControls />
                 <span className="area-badge">
                   {p.rooms.reduce((a, r) => a + area(r.points), 0).toFixed(1)}{" "}
                   m²
@@ -1135,12 +1139,13 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
               <div className="canvas-views">
                 {s.view !== "3d" && (
                   <div className="canvas-view">
-                    <FloorPlan />
+                    <FloorPlan key={p.activeFloor?.id ?? "ground"} />
                   </div>
                 )}
                 {s.view !== "2d" && (
                   <div className="canvas-view">
                     <Scene
+                      key={p.activeFloor?.id ?? "ground"}
                       preset={preset}
                       walk={walk}
                       quality={quality}
@@ -1392,6 +1397,13 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                         the floor plan clear.
                       </p>
                     )}
+                    {obj.kind === "stairs" && (
+                      <p>
+                        Set Height to the difference between floor elevations.
+                        Stairs are a visual model; use the floor selector to
+                        move upstairs.
+                      </p>
+                    )}
                     <h3>Material & finish</h3>
                     <label className="color-field">
                       Color
@@ -1467,6 +1479,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                   </>
                 ) : wall ? (
                   <>
+                    <CurveWallControls key={wall.id} id={wall.id} />
                     <h3>Wall dimensions</h3>
                     <p>
                       Dimensions are in meters. Move either endpoint to change
@@ -1569,6 +1582,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                   </>
                 ) : room ? (
                   <>
+                    <RoomCorners room={room} />
                     <label>
                       Room name
                       <input

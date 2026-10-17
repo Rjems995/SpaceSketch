@@ -81,7 +81,7 @@ test("moves and resizes openings, chooses styles, and saves outdoor surfaces", a
   expect(saved.openings[0]).toMatchObject({ width: 2.6, style: "sliding" });
   await page.reload();
   await page.getByRole("button", { name: "3D", exact: true }).click();
-  await expect(page.locator(".furniture-preview-image")).toHaveCount(28, {
+  await expect(page.locator(".furniture-preview-image")).toHaveCount(29, {
     timeout: 30000,
   });
   await expect(page.locator(".workspace canvas[data-engine]")).toBeVisible();

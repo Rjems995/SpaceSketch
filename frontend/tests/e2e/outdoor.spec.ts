@@ -98,7 +98,7 @@ test("renders all catalog models as 3D thumbnails", async ({ page }) => {
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
   await page.getByRole("button", { name: "New project", exact: true }).click();
-  await expect(page.locator(".furniture-preview-image")).toHaveCount(28, {
+  await expect(page.locator(".furniture-preview-image")).toHaveCount(29, {
     timeout: 30000,
   });
   const images = await page
@@ -110,7 +110,7 @@ test("renders all catalog models as 3D thumbnails", async ({ page }) => {
       })),
     );
   expect(images.every((i) => i.loaded)).toBe(true);
-  expect(new Set(images.map((i) => i.src)).size).toBe(28);
+  expect(new Set(images.map((i) => i.src)).size).toBe(29);
   await page.getByRole("button", { name: "Living", exact: true }).click();
   await page.screenshot({ path: "test-results/catalog-previews.png" });
   expect(errors).toEqual([]);
