@@ -1,4 +1,5 @@
 "use client";
+import { defaultLight, lightColor } from "@/lib/lighting";
 import DesignMaterial from "./design-material";
 import * as THREE from "three";
 import { RoundedBox } from "@react-three/drei";
@@ -41,6 +42,7 @@ function SoftBox({
 }
 export function FurnitureModel({ o }: { o: Furniture }) {
   const { width: w, depth: d, height: h, kind: k, material: m } = o;
+  const light = o.light ?? defaultLight;
   const box = (
     p: [number, number, number],
     s: [number, number, number],
@@ -289,9 +291,9 @@ export function FurnitureModel({ o }: { o: Furniture }) {
           </mesh>
           <pointLight
             position={[0, h * 0.8, 0]}
-            intensity={3}
-            distance={4}
-            color="#ffdaa2"
+            intensity={light.enabled ? (3 * light.brightness) / 100 : 0}
+            distance={6}
+            color={lightColor(light.temperature)}
           />
         </>
       ) : k === "shelf" ? (

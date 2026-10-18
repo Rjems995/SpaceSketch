@@ -1665,3 +1665,81 @@ footer span {
     display: none;
   }
 }
+.furniture-entry {
+  position: relative;
+  min-width: 0;
+}
+.furniture-entry .furniture-card {
+  width: 100%;
+}
+.favorite-toggle {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #fffefbef;
+  color: #665b3e;
+}
+.favorite-toggle[aria-pressed="true"] {
+  color: #986800;
+}
+.favorites-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px;
+  margin-top: 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 12px;
+}
+.favorites-filter[aria-pressed="true"] {
+  background: #e9eddf;
+}
+.catalog-empty {
+  padding: 15px 0;
+  font-size: 12px;
+}
+.catalog-empty button {
+  text-decoration: underline;
+  padding: 10px 0;
+}
+.light-controls {
+  min-width: 0;
+  border: 1px solid #d9d8ce;
+  border-radius: 6px;
+  padding: 12px;
+  margin: 18px 0;
+}
+.light-controls legend {
+  font-size: 12px;
+  padding: 0 5px;
+}
+.light-controls p {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.light-color {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border: 1px solid #888;
+  border-radius: 50%;
+}
+.light-controls label:has(input[type="checkbox"]) {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+.light-controls input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}

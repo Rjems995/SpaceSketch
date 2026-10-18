@@ -42,6 +42,7 @@ On Windows PowerShell, use `npm.cmd` if execution policy blocks `npm.ps1`.
 ### Furniture and materials
 
 - **29 furniture types** with rendered 3D catalog thumbnails and icon fallbacks.
+- Search by name, furniture type, or category using multiple terms. Star catalog pieces and use the Favorites filter; favorites persist in this browser and synchronize across its tabs.
 - Adjustable straight staircases: edit width, run (depth), rise (height), rotation, and finish.
 - Indoor pieces plus garden benches, loungers, umbrellas, pergolas, planters, trees, hedges, fences, and a barbecue.
 - Move, resize, rotate, duplicate, lock, delete, and group-drag furniture. Use transform gizmos in 3D or precise property inputs.
@@ -59,6 +60,7 @@ These are editable design surfaces. Terrain sculpting, excavation, and pool simu
 
 - 2D, 3D, and split views; six camera presets and an isometric wall cutaway.
 - Day/evening lighting, sun direction, lamp lights, shadows, ceiling visibility, and quality settings.
+- Per-lamp on/off, brightness (0?200%), and color temperature (1800?6500 K) controls in Lighting or selected-lamp Properties. Settings support undo and are saved with each floor, including JSON backups and shared views. Color temperature is an artistic approximation, not photometric calibration.
 - Desktop walkthrough with WASD movement and pointer-lock mouse look.
 - Mobile touch targets, collapsible library and properties panels, 2D pinch zoom/pan, and 3D zoom/orbit/pan/reset buttons.
 - Measurements in meters, centimeters, feet, or inches; user-entered budget estimates.
@@ -158,7 +160,7 @@ Run these from the repository root:
 | `npm run build`        | Build for production                                                                                                                  |
 | `npm start`            | Serve the production build; run build first                                                                                           |
 
-The last verified feature update passed the production build, lint, **51 unit tests**, and **14 browser tests**. Coverage includes geometry, snapping, schema compatibility, live previews and undo, opening edits, outdoor surfaces, persistence, imports/exports, catalog thumbnails, and mobile controls.
+The last verified feature update passed the production build, lint, **54 unit tests**, and **16 browser tests**. Coverage includes geometry, snapping, schema compatibility, live previews and undo, opening edits, outdoor surfaces, persistence, imports/exports, catalog thumbnails, and mobile controls.
 
 Playwright is configured to use installed **Google Chrome**. It starts a local development server when needed and can reuse an existing one. Screenshots and failure artifacts are written to `frontend/test-results/`, which Git ignores.
 

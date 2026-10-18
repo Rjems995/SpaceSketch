@@ -3,6 +3,7 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  Star,
   ArrowLeft,
   ArrowUpRight,
   Armchair,
@@ -39,13 +40,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "motion/react";
-import {
-  catalog,
-  Furniture,
-  Project,
-  template,
-  surfaceKinds,
-} from "@/lib/model";
+import { Furniture, Project, template, surfaceKinds } from "@/lib/model";
 import { area, corners, format, overlap, wallCorners } from "@/lib/geometry";
 import { useEditor } from "@/stores/editor";
 import {
@@ -66,6 +61,9 @@ import FurnitureIcon from "./furniture-icon";
 import BrandLogo from "./brand-logo";
 import type { PreviewImages } from "./furniture-previews";
 import { useDialogFocus } from "./use-dialog-focus";
+import { useFavorites } from "./use-favorites";
+import { searchCatalog } from "@/lib/catalog-search";
+import LightControls from "./light-controls";
 import FloorControls from "./floor-controls";
 import RoomCorners from "./room-corners";
 import CurveWallControls from "./curve-wall-controls";
@@ -107,6 +105,8 @@ const templates = [
   "Outdoor Patio",
 ];
 export default function Studio({ projectId }: { projectId?: string } = {}) {
+  const { favorites, toggleFavorite } = useFavorites();
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [previews, setPreviews] = useState<PreviewImages>({});
   const [propertiesCollapsed, setPropertiesCollapsed] = useState(false);
   const router = useRouter();
@@ -138,6 +138,12 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
   const modelInput = useRef<HTMLInputElement>(null);
   const saving = useRef(false);
   const p = s.project;
+  const filteredCatalog = searchCatalog(
+    query,
+    category,
+    favorites,
+    favoritesOnly,
+  );
   const preset = p?.camera.preset ?? "Isometric";
   useEffect(() => {
     try {
@@ -916,11 +922,23 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                   <label className="search">
                     <Search size={16} />
                     <input
-                      placeholder="Search the collection"
+                      aria-label="Search furniture"
+                      placeholder="Search name, type, or category"
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
                     />
                   </label>
+                  <button
+                    className="favorites-filter"
+                    aria-pressed={favoritesOnly}
+                    onClick={() => setFavoritesOnly(!favoritesOnly)}
+                  >
+                    <Star size={16} />
+                    Favorites ({favorites.length})
+                  </button>
+                  <p className="library-tip">
+                    Favorites are saved in this browser.
+                  </p>
                   <div className="categories">
                     {[
                       "All",
@@ -944,15 +962,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                   </div>
                   <div className="library-label">
                     <span>THE ESSENTIAL COLLECTION</span>
-                    <span>
-                      {
-                        catalog.filter(
-                          (c) =>
-                            (category === "All" || c.category === category) &&
-                            c.name.toLowerCase().includes(query.toLowerCase()),
-                        ).length
-                      }
-                    </span>
+                    <span>{filteredCatalog.length}</span>
                   </div>
                   <button
                     className="secondary model-import"
@@ -963,16 +973,15 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                   </button>
                   <div className="furniture-grid">
                     <FurniturePreviews onReady={setPreviews} />
-                    {catalog
-                      .filter(
-                        (c) =>
-                          (category === "All" || c.category === category) &&
-                          c.name.toLowerCase().includes(query.toLowerCase()),
-                      )
-                      .map((c) => (
+                    {filteredCatalog.map((c) => (
+                      <div
+                        className="furniture-entry"
+                        role="group"
+                        aria-label={c.name}
+                        key={c.kind}
+                      >
                         <button
                           className="furniture-card"
-                          key={c.kind}
                           draggable
                           onDragStart={(e) =>
                             e.dataTransfer.setData("furniture", c.kind)
@@ -1006,8 +1015,50 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                             {c.size[0]} × {c.size[1]} m <Plus size={13} />
                           </span>
                         </button>
-                      ))}
+                        <button
+                          className="favorite-toggle"
+                          aria-label={
+                            favorites.includes(c.kind)
+                              ? "Unfavorite"
+                              : "Favorite"
+                          }
+                          title={
+                            (favorites.includes(c.kind)
+                              ? "Unfavorite "
+                              : "Favorite ") + c.name
+                          }
+                          aria-pressed={favorites.includes(c.kind)}
+                          onClick={() => toggleFavorite(c.kind)}
+                        >
+                          <Star
+                            size={17}
+                            fill={
+                              favorites.includes(c.kind)
+                                ? "currentColor"
+                                : "none"
+                            }
+                          />
+                        </button>
+                      </div>
+                    ))}
                   </div>
+                  {filteredCatalog.length === 0 && (
+                    <div role="status" className="catalog-empty">
+                      <p>
+                        No matching furniture. Try another search or favorite a
+                        piece.
+                      </p>
+                      <button
+                        onClick={() => {
+                          setQuery("");
+                          setCategory("All");
+                          setFavoritesOnly(false);
+                        }}
+                      >
+                        Show all furniture
+                      </button>
+                    </div>
+                  )}
                   {category === "Outdoor" && (
                     <div className="build-tools">
                       <h3>Outdoor surfaces</h3>
@@ -1125,6 +1176,15 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                     <Plus size={16} />
                     Add floor lamp
                   </button>
+                  <h3>Lights on this floor</h3>
+                  {p.furniture
+                    .filter((o) => o.kind === "lamp")
+                    .map((o) => (
+                      <LightControls key={o.id} lamp={o} />
+                    ))}
+                  {!p.furniture.some((o) => o.kind === "lamp") && (
+                    <p>Add a lamp to control its brightness and color.</p>
+                  )}
                 </div>
               )}
             </aside>
@@ -1403,6 +1463,9 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                         Stairs are a visual model; use the floor selector to
                         move upstairs.
                       </p>
+                    )}
+                    {obj.kind === "lamp" && tab !== "Lighting" && (
+                      <LightControls lamp={obj} />
                     )}
                     <h3>Material & finish</h3>
                     <label className="color-field">

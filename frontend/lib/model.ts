@@ -59,6 +59,13 @@ export const furnitureSchema = z.object({
   locked: z.boolean(),
   material,
   price: z.number().min(0).default(0),
+  light: z
+    .object({
+      enabled: z.boolean(),
+      brightness: z.number().min(0).max(200),
+      temperature: z.number().min(1800).max(6500),
+    })
+    .optional(),
   model: z
     .object({
       data: z
