@@ -1743,3 +1743,52 @@ footer span {
   width: auto;
   margin: 0;
 }
+.project-preview .design-thumbnail {
+  width: 100%;
+  height: 100%;
+  padding: 16px;
+}
+.cost-breakdown {
+  padding: 4px;
+  font-size: 12px;
+}
+.cost-breakdown > p {
+  color: #686a60;
+  line-height: 1.6;
+  margin: 12px 0;
+}
+.cost-breakdown details {
+  border-top: 1px solid #ddd;
+  padding: 12px 0;
+}
+.cost-breakdown summary {
+  cursor: pointer;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.cost-breakdown ul {
+  list-style: none;
+  padding: 0;
+}
+.cost-breakdown li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 0;
+}
+.cost-breakdown .secondary {
+  margin-top: 12px;
+  width: 100%;
+}
+.project-preview .design-thumbnail {
+  transform: none;
+}
+.thumbnail-floor {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  background: #ffffffe6;
+  padding: 5px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+}

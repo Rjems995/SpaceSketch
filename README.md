@@ -66,6 +66,12 @@ These are editable design surfaces. Terrain sculpting, excavation, and pool simu
 - Measurements in meters, centimeters, feet, or inches; user-entered budget estimates.
 - Keyboard-accessible object selectors, visible focus outlines, labeled toolbar actions, reduced-motion styles, and focus trapping/restoration in account and sharing dialogs.
 
+### Dashboard previews and shopping lists
+
+- Dashboard cards show automatically fitted isometric previews of the saved floor, including rooms, wall cutaways, door gaps, windows, furniture footprints, and outdoor surfaces. These are simplified geometry previews, not cached screenshots or full model renders.
+- Open **Costs** for a furniture breakdown across all floors. Each piece belongs to the smallest room containing its center; other pieces appear under **Outdoor / unassigned**. Identical items are grouped by room, with quantity and subtotal.
+- Enter prices in furniture Properties, then use **Export shopping list (CSV)** in Costs or the Export menu. The spreadsheet includes floor, room, dimensions, finish, quantity, unit price, and totals. Zero/unset prices are flagged in the panel. Amounts use your entered currency without conversion.
+
 ### Saving and sharing
 
 - Local autosave, interrupted-session recovery, revision checks, and up to 100 undo steps.
@@ -160,7 +166,7 @@ Run these from the repository root:
 | `npm run build`        | Build for production                                                                                                                  |
 | `npm start`            | Serve the production build; run build first                                                                                           |
 
-The last verified feature update passed the production build, lint, **54 unit tests**, and **16 browser tests**. Coverage includes geometry, snapping, schema compatibility, live previews and undo, opening edits, outdoor surfaces, persistence, imports/exports, catalog thumbnails, and mobile controls.
+The last verified feature update passed the production build, lint, **58 unit tests**, and **17 browser tests**. Coverage includes geometry, snapping, schema compatibility, live previews and undo, opening edits, outdoor surfaces, persistence, imports/exports, catalog thumbnails, and mobile controls.
 
 Playwright is configured to use installed **Google Chrome**. It starts a local development server when needed and can reuse an existing one. Screenshots and failure artifacts are written to `frontend/test-results/`, which Git ignores.
 

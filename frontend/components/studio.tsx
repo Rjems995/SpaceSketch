@@ -3,6 +3,7 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  ClipboardList,
   Star,
   ArrowLeft,
   ArrowUpRight,
@@ -64,6 +65,9 @@ import { useDialogFocus } from "./use-dialog-focus";
 import { useFavorites } from "./use-favorites";
 import { searchCatalog } from "@/lib/catalog-search";
 import LightControls from "./light-controls";
+import ProjectThumbnail from "./project-thumbnail";
+import CostBreakdown from "./cost-breakdown";
+import { shoppingListCsv } from "@/lib/costs";
 import FloorControls from "./floor-controls";
 import RoomCorners from "./room-corners";
 import CurveWallControls from "./curve-wall-controls";
@@ -247,7 +251,6 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
     return () => window.removeEventListener("keydown", handler);
   }, [s, save]);
   const open = (project: Project) => {
-    setReady(false);
     s.load(project);
     setQuery("");
     setCategory("All");
@@ -266,7 +269,12 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
           new Blob([JSON.stringify(p, null, 2)], { type: "application/json" }),
           `${p.name}.json`,
         );
-      else if (type === "pdf") {
+      else if (type === "csv") {
+        download(
+          new Blob([shoppingListCsv(p)], { type: "text/csv;charset=utf-8" }),
+          `${p.name}-shopping-list.csv`,
+        );
+      } else if (type === "pdf") {
         const { jsPDF } = await import("jspdf");
         const doc = new jsPDF({ orientation: "landscape" });
         doc.setFontSize(20);
@@ -571,6 +579,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                   Export ↗
                 </option>
                 <option value="json">JSON backup</option>
+                <option value="csv">Shopping list (CSV)</option>
                 <option value="pdf">PDF current floor</option>
                 <option value="png">PNG image (3840 px)</option>
                 <option value="jpg">JPEG image (3840 px)</option>
@@ -697,45 +706,15 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                 >
                   <button
                     className="project-preview"
+                    aria-label={`Open ${project.name}`}
                     onClick={() => open(project)}
                   >
-                    <svg viewBox="-1 -1 10 8">
-                      {project.rooms.map((r) => (
-                        <polygon
-                          key={r.id}
-                          points={r.points
-                            .map((q) => `${q.x},${q.z}`)
-                            .join(" ")}
-                          fill={r.material.color}
-                          opacity=".5"
-                        />
-                      ))}
-                      {project.walls.map((w) => (
-                        <line
-                          key={w.id}
-                          x1={w.a.x}
-                          y1={w.a.z}
-                          x2={w.b.x}
-                          y2={w.b.z}
-                          stroke="#6a655b"
-                          strokeWidth=".12"
-                        />
-                      ))}
-                      {project.furniture.map((o) => (
-                        <rect
-                          key={o.id}
-                          x={o.x - o.width / 2}
-                          y={o.z - o.depth / 2}
-                          width={o.width}
-                          height={o.depth}
-                          rx=".06"
-                          fill={o.material.color}
-                          stroke="#82715b"
-                          strokeWidth=".03"
-                          transform={`rotate(${o.rotation} ${o.x} ${o.z})`}
-                        />
-                      ))}
-                    </svg>
+                    <ProjectThumbnail project={project} />
+                    <small className="thumbnail-floor">
+                      {project.activeFloor?.name ?? "Ground floor"} ·{" "}
+                      {(project.floors?.length ?? 0) + 1} floor(s)
+                    </small>
+
                     <span>
                       Open design <ArrowUpRight size={14} />
                     </span>
@@ -875,6 +854,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                 { name: "Build", icon: Home },
                 { name: "Materials", icon: Layers },
                 { name: "Lighting", icon: Sun },
+                { name: "Costs", icon: ClipboardList },
               ].map(({ name, icon: Icon }) => (
                 <button
                   key={name}
@@ -1142,6 +1122,8 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                 </div>
               ) : tab === "Materials" ? (
                 <MaterialPicker />
+              ) : tab === "Costs" ? (
+                <CostBreakdown project={p} />
               ) : (
                 <div className="property-body">
                   <label>
@@ -1984,7 +1966,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                       <strong>{p.furniture.length}</strong>
                     </div>
                     <div className="stat">
-                      <span>User-entered budget</span>
+                      <span>Current floor budget</span>
                       <strong>
                         {p.furniture
                           .reduce((a, o) => a + o.price, 0)
