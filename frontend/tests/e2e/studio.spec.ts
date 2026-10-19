@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 test("create, edit, save, reopen, and export a project", async ({ page }) => {
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "Room for possibilities." }),
+    page.getByRole("heading", { name: "Make room for your ideas." }),
   ).toBeVisible();
   await page.screenshot({ path: "test-results/dashboard.png", fullPage: true });
   await page.getByRole("button", { name: "New project", exact: true }).click();
@@ -106,9 +106,7 @@ test("living room renders and exports PNG, PDF, and GLB without runtime errors",
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
-  await page
-    .getByRole("button", { name: "Explore the living room template" })
-    .click();
+  await page.getByRole("button", { name: "Explore a space" }).click();
   await expect(page.locator(".workspace canvas")).toBeVisible();
   await page.waitForTimeout(1500);
   await page.screenshot({

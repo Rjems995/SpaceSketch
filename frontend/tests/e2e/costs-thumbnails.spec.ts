@@ -38,6 +38,7 @@ test("updates a dashboard preview and exports room-grouped furniture costs", asy
   expect(csv).toContain('"Ground floor","Empty Room","Oak lounge chair"');
   expect(csv).toContain('"2","125.50","251.00"');
   await page.locator("a.brand").click();
+  await expect(page).toHaveURL(/\/dashboard$/);
   const preview = page.getByRole("img", {
     name: "Empty Room concept: Ground floor design preview",
     exact: true,
@@ -55,6 +56,7 @@ test("updates a dashboard preview and exports room-grouped furniture costs", asy
     .selectOption(saved.furniture[0].id);
   await page.getByLabel("Color", { exact: true }).fill("#ff0000");
   await page.locator("a.brand").click();
+  await expect(page).toHaveURL(/\/dashboard$/);
   await expect(preview).toBeVisible();
   expect(await preview.innerHTML()).not.toBe(before);
   expect(await preview.innerHTML()).toContain("#ff0000");

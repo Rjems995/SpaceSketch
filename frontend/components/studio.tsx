@@ -53,6 +53,7 @@ import {
 } from "@/lib/storage";
 import { supabase, cloudProjects, deleteCloudProject } from "@/lib/supabase";
 import CloudPanel from "./cloud-panel";
+import HomeHero from "./home-hero";
 import OfflineSync, { currentAccount, syncPending } from "./offline-sync";
 import { enqueueSave, pendingSaves, removePending } from "@/lib/sync-queue";
 import FurnitureIcon from "./furniture-icon";
@@ -425,7 +426,9 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
       </div>
     );
   return (
-    <div className={`app ${presentation ? "presentation" : ""}`}>
+    <div
+      className={`app ${!p ? "home-dashboard" : ""} ${presentation ? "presentation" : ""}`}
+    >
       <OfflineSync />
       <input
         hidden
@@ -590,9 +593,13 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
             </div>
           </>
         ) : (
-          <span className="top-tagline">
-            A little imagination. A space of your own.
-          </span>
+          <nav className="home-nav" aria-label="Main navigation">
+            <a href="#your-projects">Your projects</a>
+            <a href="#home-templates">Templates</a>
+            <button onClick={() => create("Living Room")}>
+              Explore 3D <ArrowUpRight size={12} />
+            </button>
+          </nav>
         )}
         <button
           className="avatar"
@@ -604,256 +611,217 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
       </header>
       {!p ? (
         <main className="dashboard">
-          <div className="dash-heading">
-            <div>
-              <p className="eyebrow">YOUR PERSONAL DESIGN STUDIO</p>
-              <h1>Room for possibilities.</h1>
-              <p>Bring your next space to life, one idea at a time.</p>
-            </div>
-            <button className="primary" onClick={() => create("Empty Room")}>
-              <Plus size={18} />
-              New project
-            </button>
-          </div>
-          <section className="hero">
-            <div>
-              <span className="pill">FROM A FRESH PERSPECTIVE</span>
-              <h2>
-                Your space.
-                <br />
-                Reimagined.
-              </h2>
-              <p>
-                Start with a room. Make it feel like you.
-                <br />
-                Plan in 2D, explore in 3D, and find your perfect fit.
-              </p>
-              <button onClick={() => create("Living Room")}>
-                Explore the living room template <ArrowUpRight size={18} />
-              </button>
-            </div>
-            <div className="hero-room" aria-hidden="true">
-              <div className="art-wall">
-                <i />
-                <i />
-                <i />
+          <HomeHero create={create} />
+          <div className="home-library" id="your-projects">
+            <div className="section-title">
+              <div>
+                <h2>
+                  Your projects <span>{projects.length}</span>
+                </h2>
+                <p>Good spaces start with a good idea.</p>
               </div>
-              <div className="art-rug" />
-              <div className="art-sofa">
-                <i />
-                <i />
-                <i />
-              </div>
-              <div className="art-table" />
-              <div className="art-plant">✦</div>
-            </div>
-          </section>
-          <div className="section-title">
-            <div>
-              <h2>
-                Your projects <span>{projects.length}</span>
-              </h2>
-              <p>Good spaces start with a good idea.</p>
-            </div>
-            <div className="row">
-              <button
-                className="secondary"
-                onClick={() => input.current?.click()}
-              >
-                <Upload size={16} />
-                Import
-              </button>
-              {user && (
+              <div className="row">
                 <button
                   className="secondary"
-                  onClick={async () => {
-                    try {
-                      const cloud = await cloudProjects();
-                      const account = await currentAccount();
-                      const queued = account
-                        ? pendingSaves(account).map((e) => e.project.id)
-                        : [];
-                      setProjects(
-                        mergeCloudProjects(
-                          cloud.filter((p) => !queued.includes(p.id)),
-                        ),
-                      );
-                    } catch (e) {
-                      toast.error((e as Error).message);
-                    }
-                  }}
+                  onClick={() => input.current?.click()}
                 >
-                  Load cloud projects
+                  <Upload size={16} />
+                  Import
                 </button>
-              )}
-              <label className="search">
-                <Search size={16} />
-                <input
-                  placeholder="Search projects"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                />
-              </label>
-            </div>
-          </div>
-          <div className="project-grid">
-            {projects
-              .filter((p) => p.name.toLowerCase().includes(query.toLowerCase()))
-              .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-              .map((project) => (
-                <motion.article
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="project-card"
-                  key={project.id}
-                >
+                {user && (
                   <button
-                    className="project-preview"
-                    aria-label={`Open ${project.name}`}
-                    onClick={() => open(project)}
+                    className="secondary"
+                    onClick={async () => {
+                      try {
+                        const cloud = await cloudProjects();
+                        const account = await currentAccount();
+                        const queued = account
+                          ? pendingSaves(account).map((e) => e.project.id)
+                          : [];
+                        setProjects(
+                          mergeCloudProjects(
+                            cloud.filter((p) => !queued.includes(p.id)),
+                          ),
+                        );
+                      } catch (e) {
+                        toast.error((e as Error).message);
+                      }
+                    }}
                   >
-                    <ProjectThumbnail project={project} />
-                    <small className="thumbnail-floor">
-                      {project.activeFloor?.name ?? "Ground floor"} ·{" "}
-                      {(project.floors?.length ?? 0) + 1} floor(s)
-                    </small>
-
-                    <span>
-                      Open design <ArrowUpRight size={14} />
-                    </span>
+                    Load cloud projects
                   </button>
-                  <div className="project-info">
+                )}
+                <label className="search">
+                  <Search size={16} />
+                  <input
+                    placeholder="Search projects"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                  />
+                </label>
+              </div>
+            </div>
+            <div className="project-grid">
+              {projects
+                .filter((p) =>
+                  p.name.toLowerCase().includes(query.toLowerCase()),
+                )
+                .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+                .map((project) => (
+                  <motion.article
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="project-card"
+                    key={project.id}
+                  >
                     <button
-                      className="project-title"
+                      className="project-preview"
+                      aria-label={`Open ${project.name}`}
                       onClick={() => open(project)}
                     >
-                      {project.name}
+                      <ProjectThumbnail project={project} />
+                      <small className="thumbnail-floor">
+                        {project.activeFloor?.name ?? "Ground floor"} ·{" "}
+                        {(project.floors?.length ?? 0) + 1} floor(s)
+                      </small>
+
+                      <span>
+                        Open design <ArrowUpRight size={14} />
+                      </span>
                     </button>
-                    <p>
-                      {project.rooms
-                        .reduce((a, r) => a + area(r.points), 0)
-                        .toFixed(0)}{" "}
-                      m² <span>·</span> Edited{" "}
-                      {new Date(project.updatedAt).toLocaleDateString()}
-                    </p>
-                    <div className="card-actions">
+                    <div className="project-info">
                       <button
-                        aria-label="Rename project"
-                        title="Rename project"
-                        onClick={async () => {
-                          const name = prompt("Project name", project.name);
-                          if (name) {
-                            try {
-                              const renamed = saveLocal({
-                                ...project,
-                                name: name.slice(0, 100),
-                                updatedAt: new Date().toISOString(),
-                              });
-                              if (user) {
-                                const account = await currentAccount();
-                                if (account) {
-                                  enqueueSave(account, renamed);
-                                  window.dispatchEvent(
-                                    new Event("spacesketch-sync-now"),
-                                  );
+                        className="project-title"
+                        onClick={() => open(project)}
+                      >
+                        {project.name}
+                      </button>
+                      <p>
+                        {project.rooms
+                          .reduce((a, r) => a + area(r.points), 0)
+                          .toFixed(0)}{" "}
+                        m² <span>·</span> Edited{" "}
+                        {new Date(project.updatedAt).toLocaleDateString()}
+                      </p>
+                      <div className="card-actions">
+                        <button
+                          aria-label="Rename project"
+                          title="Rename project"
+                          onClick={async () => {
+                            const name = prompt("Project name", project.name);
+                            if (name) {
+                              try {
+                                const renamed = saveLocal({
+                                  ...project,
+                                  name: name.slice(0, 100),
+                                  updatedAt: new Date().toISOString(),
+                                });
+                                if (user) {
+                                  const account = await currentAccount();
+                                  if (account) {
+                                    enqueueSave(account, renamed);
+                                    window.dispatchEvent(
+                                      new Event("spacesketch-sync-now"),
+                                    );
+                                  }
                                 }
+                              } catch (e) {
+                                toast.error((e as Error).message);
+                              } finally {
+                                setProjects(listProjects());
                               }
-                            } catch (e) {
-                              toast.error((e as Error).message);
-                            } finally {
-                              setProjects(listProjects());
                             }
-                          }
-                        }}
-                      >
-                        <Settings2 size={14} />
-                      </button>
-                      <button
-                        aria-label="Duplicate project"
-                        title="Duplicate project"
-                        onClick={() => {
-                          saveLocal({
-                            ...project,
-                            id: crypto.randomUUID(),
-                            name: `${project.name} copy`,
-                            revision: 0,
-                            cloudRevision: 0,
-                          });
-                          setProjects(listProjects());
-                        }}
-                      >
-                        <Copy size={14} />
-                      </button>
-                      <button
-                        aria-label="Delete project"
-                        title="Delete project"
-                        onClick={async () => {
-                          if (
-                            confirm(
-                              `Delete “${project.name}”? This cannot be undone.`,
-                            )
-                          ) {
-                            try {
-                              if (project.cloudRevision > 0) {
-                                if (!user)
-                                  throw new Error(
-                                    "Sign in before deleting a cloud-synced project.",
-                                  );
-                                await deleteCloudProject(project.id);
+                          }}
+                        >
+                          <Settings2 size={14} />
+                        </button>
+                        <button
+                          aria-label="Duplicate project"
+                          title="Duplicate project"
+                          onClick={() => {
+                            saveLocal({
+                              ...project,
+                              id: crypto.randomUUID(),
+                              name: `${project.name} copy`,
+                              revision: 0,
+                              cloudRevision: 0,
+                            });
+                            setProjects(listProjects());
+                          }}
+                        >
+                          <Copy size={14} />
+                        </button>
+                        <button
+                          aria-label="Delete project"
+                          title="Delete project"
+                          onClick={async () => {
+                            if (
+                              confirm(
+                                `Delete “${project.name}”? This cannot be undone.`,
+                              )
+                            ) {
+                              try {
+                                if (project.cloudRevision > 0) {
+                                  if (!user)
+                                    throw new Error(
+                                      "Sign in before deleting a cloud-synced project.",
+                                    );
+                                  await deleteCloudProject(project.id);
+                                }
+                                deleteLocal(project.id);
+                                const account = await currentAccount();
+                                if (account) removePending(account, project.id);
+                                setProjects(listProjects());
+                              } catch (e) {
+                                toast.error((e as Error).message);
                               }
-                              deleteLocal(project.id);
-                              const account = await currentAccount();
-                              if (account) removePending(account, project.id);
-                              setProjects(listProjects());
-                            } catch (e) {
-                              toast.error((e as Error).message);
                             }
-                          }
-                        }}
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                          }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </motion.article>
-              ))}
-            <button className="new-card" onClick={() => create("Empty Room")}>
-              <span>
-                <Plus size={26} />
-              </span>
-              <strong>A blank canvas</strong>
-              <small>Make room for something new</small>
-            </button>
-          </div>
-          <div className="section-title">
-            <div>
-              <h2>A starting point for every space</h2>
-              <p>Editable templates to get your ideas moving.</p>
-            </div>
-          </div>
-          <div className="templates">
-            {templates.map((t, i) => (
-              <button key={t} onClick={() => create(t)}>
+                  </motion.article>
+                ))}
+              <button className="new-card" onClick={() => create("Empty Room")}>
                 <span>
-                  {i === 0 ? (
-                    <Plus />
-                  ) : i === 1 ? (
-                    <Armchair />
-                  ) : i === 6 ? (
-                    <Box />
-                  ) : (
-                    <Home />
-                  )}
+                  <Plus size={26} />
                 </span>
-                {t}
-                <ArrowUpRight size={15} />
+                <strong>A blank canvas</strong>
+                <small>Make room for something new</small>
               </button>
-            ))}
+            </div>
+            <div className="section-title">
+              <div>
+                <h2 id="home-templates">A starting point for every space</h2>
+                <p>Editable templates to get your ideas moving.</p>
+              </div>
+            </div>
+            <div className="templates">
+              {templates.map((t, i) => (
+                <button key={t} onClick={() => create(t)}>
+                  <span>
+                    {i === 0 ? (
+                      <Plus />
+                    ) : i === 1 ? (
+                      <Armchair />
+                    ) : i === 6 ? (
+                      <Box />
+                    ) : (
+                      <Home />
+                    )}
+                  </span>
+                  {t}
+                  <ArrowUpRight size={15} />
+                </button>
+              ))}
+            </div>
+            <footer>
+              DESIGNED FOR YOUR EVERYDAY EXTRAORDINARY
+              <span>Local demo · Your projects stay in this browser</span>
+            </footer>
           </div>
-          <footer>
-            DESIGNED FOR YOUR EVERYDAY EXTRAORDINARY
-            <span>Local demo · Your projects stay in this browser</span>
-          </footer>
         </main>
       ) : (
         <>
