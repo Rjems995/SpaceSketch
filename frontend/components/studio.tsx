@@ -51,13 +51,10 @@ import {
   listProjects,
   saveLocal,
 } from "@/lib/storage";
-import {
-  supabase,
-  syncCloud,
-  cloudProjects,
-  deleteCloudProject,
-} from "@/lib/supabase";
+import { supabase, cloudProjects, deleteCloudProject } from "@/lib/supabase";
 import CloudPanel from "./cloud-panel";
+import OfflineSync, { currentAccount, syncPending } from "./offline-sync";
+import { enqueueSave, pendingSaves, removePending } from "@/lib/sync-queue";
 import FurnitureIcon from "./furniture-icon";
 import BrandLogo from "./brand-logo";
 import type { PreviewImages } from "./furniture-previews";
@@ -84,7 +81,6 @@ import {
   moveWallEndpoint,
 } from "@/lib/rooms";
 import {
-  cacheCloudRevision,
   mergeCloudProjects,
   saveDraft,
   clearDraft,
@@ -194,16 +190,14 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
       if (useEditor.getState().project === current)
         useEditor.setState({ project: next, status: "Saved locally" });
       if (supabase && user) {
-        useEditor.setState({ status: "Syncing…" });
-        const synced = await syncCloud(next);
-        const active = useEditor.getState().project;
-        if (synced) {
-          cacheCloudRevision(synced);
-          if (active?.id === synced.id)
-            useEditor.setState({
-              project: { ...active, cloudRevision: synced.cloudRevision },
-              status: active === next ? "Saved to cloud" : "Unsaved changes",
-            });
+        const account = await currentAccount();
+        if (account) {
+          enqueueSave(account, next);
+          if (useEditor.getState().project === next)
+            useEditor.setState({ status: "Saved locally - queued for cloud" });
+          // New edits can be saved locally while this upload is in progress.
+          saving.current = false;
+          await syncPending(account);
         }
       }
     } catch (e) {
@@ -432,6 +426,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
     );
   return (
     <div className={`app ${presentation ? "presentation" : ""}`}>
+      <OfflineSync />
       <input
         hidden
         ref={modelInput}
@@ -674,7 +669,15 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                   onClick={async () => {
                     try {
                       const cloud = await cloudProjects();
-                      setProjects(mergeCloudProjects(cloud));
+                      const account = await currentAccount();
+                      const queued = account
+                        ? pendingSaves(account).map((e) => e.project.id)
+                        : [];
+                      setProjects(
+                        mergeCloudProjects(
+                          cloud.filter((p) => !queued.includes(p.id)),
+                        ),
+                      );
                     } catch (e) {
                       toast.error((e as Error).message);
                     }
@@ -747,8 +750,13 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                                 updatedAt: new Date().toISOString(),
                               });
                               if (user) {
-                                const synced = await syncCloud(renamed);
-                                if (synced) cacheCloudRevision(synced);
+                                const account = await currentAccount();
+                                if (account) {
+                                  enqueueSave(account, renamed);
+                                  window.dispatchEvent(
+                                    new Event("spacesketch-sync-now"),
+                                  );
+                                }
                               }
                             } catch (e) {
                               toast.error((e as Error).message);
@@ -794,6 +802,8 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                                 await deleteCloudProject(project.id);
                               }
                               deleteLocal(project.id);
+                              const account = await currentAccount();
+                              if (account) removePending(account, project.id);
                               setProjects(listProjects());
                             } catch (e) {
                               toast.error((e as Error).message);

@@ -11,6 +11,7 @@ import {
 } from "@/lib/supabase";
 import { useEditor } from "@/stores/editor";
 import { projectSchema } from "@/lib/model";
+import VersionCompare from "./version-compare";
 export default function CloudPanel({
   close,
   save,
@@ -19,6 +20,7 @@ export default function CloudPanel({
   save: () => Promise<void>;
 }) {
   const p = useEditor((s) => s.project)!;
+  const past = useEditor((s) => s.past);
   const [url, setUrl] = useState(""),
     [busy, setBusy] = useState(false);
   const [accountId, setAccountId] = useState<string | null>(null);
@@ -42,7 +44,7 @@ export default function CloudPanel({
   return (
     <div className="modal-backdrop">
       <div
-        className="modal"
+        className="modal comparison-modal"
         role="dialog"
         aria-modal="true"
         aria-label="Share your space"
@@ -60,6 +62,29 @@ export default function CloudPanel({
           Read-only links show the latest cloud version. Anyone with the link
           can view the design until you revoke it.
         </p>
+        <VersionCompare
+          versions={[
+            ...versions.map((v) => ({
+              id: "cloud-" + v.revision,
+              label: "Cloud revision " + v.revision,
+              project: projectSchema.parse(v.snapshot_data),
+            })),
+            ...(past.length
+              ? [
+                  {
+                    id: "session-start",
+                    label: "Earlier in this session",
+                    project: past[0],
+                  },
+                ]
+              : []),
+            {
+              id: "current",
+              label: "Current design (including unsaved edits)",
+              project: p,
+            },
+          ]}
+        />
         {!supabase ? (
           <p>
             Cloud sharing requires Supabase configuration. Export a JSON backup

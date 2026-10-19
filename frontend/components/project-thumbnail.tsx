@@ -7,7 +7,13 @@ const iso = (p: Point, height = 0): Point => ({
 });
 const points = (p: Point[]) => p.map((q) => `${q.x},${q.z}`).join(" ");
 // Lightweight, deterministic previews of saved geometry; no extra WebGL contexts or cached images.
-export default function ProjectThumbnail({ project: p }: { project: Project }) {
+export default function ProjectThumbnail({
+  project: p,
+  viewBox,
+}: {
+  project: Project;
+  viewBox?: string;
+}) {
   const solids = [
     ...p.walls.flatMap((w) => {
       const openings = p.openings
@@ -77,7 +83,7 @@ export default function ProjectThumbnail({ project: p }: { project: Project }) {
   return (
     <svg
       className="design-thumbnail"
-      viewBox={`${minX} ${minZ} ${width} ${height}`}
+      viewBox={viewBox ?? `${minX} ${minZ} ${width} ${height}`}
       role="img"
       aria-label={`${p.name}: ${p.activeFloor?.name ?? "Ground floor"} design preview`}
     >
@@ -145,4 +151,26 @@ export default function ProjectThumbnail({ project: p }: { project: Project }) {
       )}
     </svg>
   );
+}
+
+export function comparisonViewBox(projects: Project[]) {
+  const pts = projects.flatMap((p) => [
+    ...p.rooms.flatMap((r) => r.points.map((q) => iso(q))),
+    ...p.surfaces.flatMap((s) => corners(s).map((q) => iso(q, s.elevation))),
+    ...p.walls.flatMap((w) =>
+      wallCorners(w).flatMap((q) => [iso(q), iso(q, Math.min(w.height, 1.25))]),
+    ),
+    ...p.furniture.flatMap((f) =>
+      corners(f).flatMap((q) => [iso(q), iso(q, f.height)]),
+    ),
+  ]);
+  if (!pts.length) return "-1 -1 10 8";
+  const x = Math.min(...pts.map((p) => p.x)) - 0.8,
+    z = Math.min(...pts.map((p) => p.z)) - 0.8;
+  return [
+    x,
+    z,
+    Math.max(...pts.map((p) => p.x)) - x + 0.8,
+    Math.max(...pts.map((p) => p.z)) - z + 0.8,
+  ].join(" ");
 }

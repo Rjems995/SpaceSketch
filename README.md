@@ -166,7 +166,7 @@ Run these from the repository root:
 | `npm run build`        | Build for production                                                                                                                  |
 | `npm start`            | Serve the production build; run build first                                                                                           |
 
-The last verified feature update passed the production build, lint, **58 unit tests**, and **17 browser tests**. Coverage includes geometry, snapping, schema compatibility, live previews and undo, opening edits, outdoor surfaces, persistence, imports/exports, catalog thumbnails, and mobile controls.
+The last verified feature update passed the production build, lint, **63 unit tests**, and **19 browser tests**. Coverage includes geometry, snapping, schema compatibility, live previews and undo, opening edits, outdoor surfaces, persistence, imports/exports, catalog thumbnails, and mobile controls.
 
 Playwright is configured to use installed **Google Chrome**. It starts a local development server when needed and can reuse an existing one. Screenshots and failure artifacts are written to `frontend/test-results/`, which Git ignores.
 
@@ -204,3 +204,9 @@ Use a Node.js version compatible with the local setup. Configure the two public 
 - Broader accessibility, browser, and device testing is still needed.
 
 Built-in furniture geometry and procedural textures are authored in the project. The SpaceSketch logo is supplied by the project owner; imported models retain user-provided license and attribution information.
+
+### Offline cloud sync and version comparison
+
+Signed-in saves are stored locally and queued per Supabase account. While the app is open, reconnecting retries pending saves automatically (also every 15 seconds). Queues survive reloads; signing out pauses that account's queue. Network failures retry, while server rejections pause the affected project. The sync notice lets you preserve conflicting work as a separate cloud project; load cloud projects afterward to access the remote version. No automatic overwrite or merge occurs. Keep this browser's storage until syncing completes. Offline editing requires an already-loaded app; offline cold starts and background syncing with the app closed are not supported.
+
+Open Share to compare the current design with an earlier session state or load cloud version history and select any two revisions. The read-only, side-by-side isometric geometry previews include a floor selector and item counts; they use simplified furniture shapes, not photorealistic renders. Both previews share the same scale. Comparison does not restore or modify either version. Offline queue tests cover reconnects, account separation, edits during upload, and conflict preservation; the browser sync test mocks Supabase responses and does not modify live cloud data.
