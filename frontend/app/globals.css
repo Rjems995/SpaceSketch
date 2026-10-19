@@ -152,7 +152,6 @@ a {
   height: auto;
   object-fit: contain;
   flex-shrink: 0;
-  mix-blend-mode: multiply;
 }
 .brand-logo-large {
   width: 240px;
