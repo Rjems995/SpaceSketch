@@ -95,15 +95,20 @@ export const surfaceKinds = [
   "pool",
   "terrain",
 ] as const;
+export const exteriorKinds = ["roof", "balcony", "boundary-fence"] as const;
 export const surfaceSchema = z.object({
   id: z.string(),
   name: z.string().max(100),
-  kind: z.enum(surfaceKinds),
+  kind: z.enum([...surfaceKinds, ...exteriorKinds]),
+  height: z.number().min(0.1).max(10).optional(),
+  roofStyle: z.enum(["flat", "gable", "shed"]).optional(),
+  fenceStyle: z.enum(["picket", "solid"]).optional(),
+  finish: material.optional(),
   x: point.shape.x,
   z: point.shape.z,
   width: z.number().min(0.3).max(100),
-  depth: z.number().min(0.3).max(100),
-  elevation: z.number().min(-3).max(3).default(0),
+  depth: z.number().min(0.05).max(100),
+  elevation: z.number().min(-3).max(20).default(0),
   slope: z.number().min(-2).max(2).default(0),
   rotation: z.number().finite().default(0),
   color: z.string().regex(/^#[0-9a-f]{6}$/i),
@@ -252,6 +257,9 @@ export type Point = z.infer<typeof point>;
 export type Surface = z.infer<typeof surfaceSchema>;
 export type Opening = Project["openings"][number];
 export const surfaceColors: Record<Surface["kind"], string> = {
+  roof: "#6c716d",
+  balcony: "#c2ae8e",
+  "boundary-fence": "#987954",
   patio: "#b9ac96",
   grass: "#799258",
   path: "#c4b9a6",

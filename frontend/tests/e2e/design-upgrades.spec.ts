@@ -9,6 +9,7 @@ test("applies and restores materials, selects with keyboard, and exports a high 
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
   await page.getByRole("button", { name: "Bedroom", exact: true }).click();
+  await expect(page).toHaveURL(/\/editor\//);
   await page.getByRole("button", { name: "2D", exact: true }).click();
   const selector = page.getByLabel("Properties object selector");
   const furnitureId = await page.evaluate(

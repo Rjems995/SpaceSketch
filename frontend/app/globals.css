@@ -2227,3 +2227,84 @@ footer span {
     flex-wrap: wrap;
   }
 }
+
+.walk-pad {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  z-index: 6;
+  padding: 10px;
+  border: 1px solid #d8dbcf;
+  border-radius: 14px;
+  background: #fffef5eb;
+  box-shadow: 0 4px 18px #0002;
+}
+.walk-pad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 46px);
+  gap: 5px;
+}
+.walk-pad button {
+  min-height: 44px;
+  border-radius: 8px;
+  background: #e9edde;
+  touch-action: none;
+  user-select: none;
+}
+.walk-pad button:active {
+  background: #64765c;
+  color: white;
+}
+.walk-pad .walk-reset {
+  width: 100%;
+  margin-top: 6px;
+  font-size: 11px;
+  background: transparent;
+}
+.walk-help {
+  pointer-events: none;
+  max-width: calc(100% - 24px);
+}
+
+.exterior-tools {
+  margin-block: 20px;
+}
+.exterior-tools .roof-visibility {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-block: 14px;
+  font-size: 11px;
+}
+.exterior-tools .roof-visibility input {
+  width: auto;
+}
+.exterior-finishes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.exterior-tools .exterior-finishes button {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 7px;
+  font-size: 10px;
+  text-align: left;
+}
+.exterior-finishes span {
+  display: block;
+  height: 30px;
+  border-radius: 4px;
+  border: 1px solid #0001;
+}
+.exterior-properties {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  margin-block: 14px;
+  min-width: 0;
+}
+.exterior-properties legend {
+  font-size: 11px;
+}

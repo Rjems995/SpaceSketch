@@ -7,7 +7,7 @@ export default function BrandLogo({ large = false }: { large?: boolean }) {
       src={logo}
       alt="SpaceSketch"
       className={large ? "brand-logo brand-logo-large" : "brand-logo"}
-      sizes={large ? "240px" : "96px"}
+      sizes={large ? "240px" : "96px"}  
     />
   );
 }

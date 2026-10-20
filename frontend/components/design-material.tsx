@@ -5,9 +5,11 @@ import { floorTexture } from "@/lib/materials";
 export default function DesignMaterial({
   material,
   color,
+  doubleSide = false,
 }: {
   material: Furniture["material"];
   color?: string;
+  doubleSide?: boolean;
 }) {
   const texture = useMemo(() => {
     if (material.texture === "solid") return null;
@@ -20,6 +22,7 @@ export default function DesignMaterial({
   useEffect(() => () => texture?.dispose(), [texture]);
   return (
     <meshStandardMaterial
+      side={doubleSide ? 2 : 0}
       color={color ?? material.color}
       roughness={material.roughness}
       metalness={material.metalness}

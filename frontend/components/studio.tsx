@@ -53,6 +53,7 @@ import {
 } from "@/lib/storage";
 import { supabase, cloudProjects, deleteCloudProject } from "@/lib/supabase";
 import CloudPanel from "./cloud-panel";
+import { ExteriorTools, ExteriorProperties } from "./exterior-tools";
 import HomeHero from "./home-hero";
 import OfflineSync, { currentAccount, syncPending } from "./offline-sync";
 import { enqueueSave, pendingSaves, removePending } from "@/lib/sync-queue";
@@ -1077,6 +1078,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                     Room and wall tools: click a start point, then an end point.
                     Select walls to move their endpoints.
                   </p>
+                  <ExteriorTools />
                   <h3>Outdoor surfaces</h3>
                   {surfaceKinds.map((kind) => (
                     <button
@@ -1218,7 +1220,7 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                       useEditor.setState({ view: "3d" });
                       if (!walk)
                         toast.info(
-                          "Click the scene to look around. WASD to walk; Escape to release the mouse.",
+                          "Drag the scene to look. Use WASD, arrow keys, or the movement pad. Escape exits.",
                         );
                     }}
                   >
@@ -1229,8 +1231,8 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
               </div>
               {walk && (
                 <div className="walk-help">
-                  Click the scene · WASD to move · Mouse to look · Esc to
-                  release
+                  Drag to look | WASD / arrows to move | Q / E to turn | Esc to
+                  exit
                 </div>
               )}
             </section>
@@ -1779,7 +1781,8 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                   </>
                 ) : surface ? (
                   <>
-                    <h3>{surface.kind} surface</h3>
+                    <h3>{surface.name}</h3>
+                    <ExteriorProperties surface={surface} />
                     <label>
                       Surface name
                       <input

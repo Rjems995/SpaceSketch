@@ -12,6 +12,7 @@ type State = {
   tool: string;
   view: "2d" | "3d" | "split";
   grid: boolean;
+  roofsVisible: boolean;
   snapping: boolean;
   transformMode: "translate" | "rotate" | "scale";
   gridStep: number;
@@ -56,6 +57,7 @@ export const useEditor = create<State>((set, get) => ({
   tool: "select",
   view: "3d",
   grid: true,
+  roofsVisible: true,
   snapping: true,
   transformMode: "translate",
   gridStep: 0.1,
@@ -166,7 +168,7 @@ export const useEditor = create<State>((set, get) => ({
   },
   duplicate: () => {
     const ids = get().selected;
-    get().edit((p) =>
+    get().edit((p) => {
       p.furniture.push(
         ...p.furniture
           .filter((o) => ids.includes(o.id))
@@ -177,8 +179,18 @@ export const useEditor = create<State>((set, get) => ({
             z: o.z + 0.3,
             locked: false,
           })),
-      ),
-    );
+      );
+      p.surfaces.push(
+        ...p.surfaces
+          .filter((o) => ids.includes(o.id))
+          .map((o) => ({
+            ...structuredClone(o),
+            id: crypto.randomUUID(),
+            x: o.x + 0.3,
+            z: o.z + 0.3,
+          })),
+      );
+    });
   },
   patch: (id, patch) =>
     get().edit((p) => {

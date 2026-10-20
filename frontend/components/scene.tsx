@@ -4,7 +4,6 @@ import {
   OrbitControls,
   ContactShadows,
   Grid,
-  PointerLockControls,
   TransformControls,
 } from "@react-three/drei";
 import { useEffect, useMemo, useRef, useState, Suspense } from "react";
@@ -29,7 +28,7 @@ import {
   Home,
 } from "lucide-react";
 import { useEditor } from "@/stores/editor";
-import { corners, overlap } from "@/lib/geometry";
+import { WalkCamera, WalkPad } from "./walkthrough-controls";
 import { download } from "@/lib/storage";
 import { placementChecks } from "@/lib/placement-checks";
 import { floorTexture } from "@/lib/materials";
@@ -59,7 +58,7 @@ function EditableFurniture({
         rotation={[0, (-o.rotation * Math.PI) / 180, 0]}
         onClick={(e) => {
           e.stopPropagation();
-          if (!readOnly) s.select(o.id, e.shiftKey);
+          if (!readOnly && !walk) s.select(o.id, e.shiftKey);
         }}
       >
         {o.model ? (
@@ -157,11 +156,11 @@ function SceneContent({
   readOnly: boolean;
 }) {
   const { camera, gl, scene } = useThree();
+  const roofsVisible = useEditor((s) => s.roofsVisible);
   const conflicts = useMemo(
     () => new Set(placementChecks(p).flatMap((issue) => issue.ids)),
     [p],
   );
-  const keys = useRef(new Set<string>());
   const selected = useEditor((s) => s.selected);
   const select = useEditor((s) => s.select);
   const shapes = useMemo(
@@ -185,18 +184,11 @@ function SceneContent({
       Left: [-9, 4, 2.5],
       Right: [15, 4, 2.5],
     };
-    camera.position.fromArray(
-      walk
-        ? [3.5, p.camera.eyeHeight, 4]
-        : positions[preset] || positions.Isometric,
-    );
+    if (walk) return;
+    camera.position.fromArray(positions[preset] || positions.Isometric);
     camera.lookAt(3.5, 0, 2.5);
   }, [camera, preset, walk, p.camera.eyeHeight]);
   useEffect(() => {
-    const down = (e: KeyboardEvent) => keys.current.add(e.code),
-      up = (e: KeyboardEvent) => keys.current.delete(e.code);
-    window.addEventListener("keydown", down);
-    window.addEventListener("keyup", up);
     const exp = async (e: Event) => {
       try {
         const format = (e as CustomEvent).detail;
@@ -248,63 +240,9 @@ function SceneContent({
     };
     window.addEventListener("scene-export", exp);
     return () => {
-      window.removeEventListener("keydown", down);
-      window.removeEventListener("keyup", up);
       window.removeEventListener("scene-export", exp);
     };
   }, [camera, gl, p.name, scene]);
-  useFrame((_, dt) => {
-    if (!walk) return;
-    const dir = new THREE.Vector3();
-    camera.getWorldDirection(dir);
-    dir.y = 0;
-    dir.normalize();
-    const side = new THREE.Vector3().crossVectors(
-      dir,
-      new THREE.Vector3(0, 1, 0),
-    );
-    const move = new THREE.Vector3();
-    if (keys.current.has("KeyW")) move.add(dir);
-    if (keys.current.has("KeyS")) move.sub(dir);
-    if (keys.current.has("KeyD")) move.add(side);
-    if (keys.current.has("KeyA")) move.sub(side);
-    move.normalize().multiplyScalar(Math.min(dt, 0.05) * p.camera.speed);
-    const nx = camera.position.x + move.x,
-      nz = camera.position.z + move.z;
-    const player = corners({
-      x: nx,
-      z: nz,
-      width: 0.35,
-      depth: 0.35,
-      rotation: 0,
-    });
-    const blocked =
-      p.furniture
-        .filter((o) => o.kind !== "rug")
-        .some((o) => overlap(player, corners(o))) ||
-      p.walls.some((w) => {
-        const dx = w.b.x - w.a.x,
-          dz = w.b.z - w.a.z,
-          t = Math.max(
-            0,
-            Math.min(
-              1,
-              ((nx - w.a.x) * dx + (nz - w.a.z) * dz) / (dx * dx + dz * dz),
-            ),
-          );
-        return (
-          Math.hypot(nx - w.a.x - t * dx, nz - w.a.z - t * dz) <
-            0.2 + w.thickness / 2 &&
-          !p.openings.some(
-            (o) =>
-              o.wallId === w.id &&
-              o.kind === "door" &&
-              Math.abs(t - o.offset) * Math.hypot(dx, dz) < o.width / 2 - 0.18,
-          )
-        );
-      });
-    if (!blocked) camera.position.add(move);
-  });
   return (
     <>
       <color
@@ -336,7 +274,7 @@ function SceneContent({
                 receiveShadow
                 onClick={(e) => {
                   e.stopPropagation();
-                  select(r.id);
+                  if (!readOnly && !walk) select(r.id);
                 }}
               >
                 <shapeGeometry args={[shapes[i]]} />
@@ -354,16 +292,18 @@ function SceneContent({
             </group>
           ),
       )}
-      {p.surfaces.map((o) => (
-        <OutdoorSurface
-          key={o.id}
-          surface={o}
-          selected={selected.includes(o.id)}
-          onSelect={() => {
-            if (!readOnly) select(o.id);
-          }}
-        />
-      ))}
+      {p.surfaces
+        .filter((o) => o.kind !== "roof" || roofsVisible || readOnly)
+        .map((o) => (
+          <OutdoorSurface
+            key={o.id}
+            surface={o}
+            selected={selected.includes(o.id)}
+            onSelect={() => {
+              if (!readOnly && !walk) select(o.id);
+            }}
+          />
+        ))}
       {visibleDesign(p).walls.map((w) => {
         const len = Math.hypot(w.b.x - w.a.x, w.b.z - w.a.z),
           openings = p.openings
@@ -451,7 +391,11 @@ function SceneContent({
                   if (!readOnly && !walk) select(o.id);
                 }}
               >
-                <mesh key={o.id} position={[0, o.height / 2, 0]}>
+                <mesh
+                  key={o.id}
+                  position={[0, o.height / 2, 0]}
+                  visible={!(walk && o.kind === "door")}
+                >
                   <boxGeometry args={[o.width, o.height, 0.025]} />
                   <meshPhysicalMaterial
                     color={
@@ -545,7 +489,13 @@ function SceneContent({
         />
       )}
       {walk ? (
-        <PointerLockControls />
+        <WalkCamera
+          project={{
+            ...p,
+            ...visibleDesign(p),
+            rooms: p.rooms.filter((r) => r.visible),
+          }}
+        />
       ) : (
         <OrbitControls
           makeDefault
@@ -743,6 +693,7 @@ export default function Scene({
             readOnly={readOnly}
           />
         </Canvas>
+        {walk && <WalkPad />}
         {!walk && (
           <div className="camera-actions" aria-label="Camera controls">
             {[

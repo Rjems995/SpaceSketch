@@ -3,7 +3,20 @@ import * as THREE from "three";
 import type { Surface } from "@/lib/model";
 import { floorTexture } from "@/lib/materials";
 import { Box } from "./furniture-model";
-export default function OutdoorSurface({
+import { isExterior } from "@/lib/exteriors";
+import ExteriorModel from "./exterior-model";
+export default function OutdoorSurface(props: {
+  surface: Surface;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return isExterior(props.surface) ? (
+    <ExteriorModel {...props} />
+  ) : (
+    <GroundSurface {...props} />
+  );
+}
+function GroundSurface({
   surface: o,
   selected,
   onSelect,

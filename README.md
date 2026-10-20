@@ -166,7 +166,7 @@ Run these from the repository root:
 | `npm run build`        | Build for production                                                                                                                  |
 | `npm start`            | Serve the production build; run build first                                                                                           |
 
-The last verified feature update passed the production build, lint, **63 unit tests**, and **19 browser tests**. Coverage includes geometry, snapping, schema compatibility, live previews and undo, opening edits, outdoor surfaces, persistence, imports/exports, catalog thumbnails, and mobile controls.
+The last verified feature update passed the production build, lint, **70 unit tests**, and **21 browser tests**. Coverage includes geometry, snapping, schema compatibility, live previews and undo, opening edits, outdoor surfaces, persistence, imports/exports, catalog thumbnails, and mobile controls.
 
 Playwright is configured to use installed **Google Chrome**. It starts a local development server when needed and can reuse an existing one. Screenshots and failure artifacts are written to `frontend/test-results/`, which Git ignores.
 
@@ -210,3 +210,15 @@ Built-in furniture geometry and procedural textures are authored in the project.
 Signed-in saves are stored locally and queued per Supabase account. While the app is open, reconnecting retries pending saves automatically (also every 15 seconds). Queues survive reloads; signing out pauses that account's queue. Network failures retry, while server rejections pause the affected project. The sync notice lets you preserve conflicting work as a separate cloud project; load cloud projects afterward to access the remote version. No automatic overwrite or merge occurs. Keep this browser's storage until syncing completes. Offline editing requires an already-loaded app; offline cold starts and background syncing with the app closed are not supported.
 
 Open Share to compare the current design with an earlier session state or load cloud version history and select any two revisions. The read-only, side-by-side isometric geometry previews include a floor selector and item counts; they use simplified furniture shapes, not photorealistic renders. Both previews share the same scale. Comparison does not restore or modify either version. Offline queue tests cover reconnects, account separation, edits during upload, and conflict preservation; the browser sync test mocks Supabase responses and does not modify live cloud data.
+
+### Eye-level walk-through
+
+Choose **Walkthrough** in the editor to start at a free spot on the current floor. Drag the scene to look, use **WASD / arrow keys** to move and **Q / E** to turn, or hold the on-screen movement buttons on touch devices. **Reset position** returns to the starting spot; **Exit walkthrough** or **Escape** returns to the orbit view. Speed and eye height remain adjustable in camera settings.
+
+Movement stops when focus leaves the page or enters a text field. Walls and furniture block movement, with sliding along obstacles and passage through sufficiently wide/tall doors (shown open during the tour). Movement stays on the selected floor at fixed eye height; stairs and sloped terrain do not change elevation automatically.
+
+### Roofs, balconies, fences, and exterior finishes
+
+Open **Build > Roof & exterior** to add a roof, balcony, or boundary fence. Roofs start over the current floor's wall bounds with a 30 cm overhang. Properties supports flat, gable, and shed roofs; roof rise; railing height; solid/picket fences; position, dimensions, elevation, rotation, and color. Choose an exterior finish after selecting a structure or wall (wall finishes apply to both sides). **Show roofs in 3D** temporarily hides roofs for interior editing; hidden roofs are omitted from 3D image/GLB exports.
+
+Exterior structures use rectangular footprints, with dashed outlines in 2D. Drag an outline or use the object selector and Properties to edit it. They support undo, duplication, deletion, per-floor persistence, JSON/cloud snapshots, PDF footprints, 3D image/GLB exports, and simplified dashboard previews. Balconies have railings on three sides and an open rear edge. Fence panels block the fixed-height walk-through. Structural items are excluded from the furniture shopping list. Automatic roof trimming, structural engineering, multi-floor assemblies, and stair/elevation navigation are not included.

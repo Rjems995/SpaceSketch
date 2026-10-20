@@ -9,6 +9,7 @@ import {
   Circle,
   Transformer,
 } from "react-konva";
+import { isExterior } from "@/lib/exteriors";
 import { placementChecks } from "@/lib/placement-checks";
 import { addCurvedWall, curvePoints } from "@/lib/curves";
 import { moveRoomCorner } from "@/lib/rooms";
@@ -132,7 +133,7 @@ export default function FloorPlan() {
         setStart(q);
         return;
       }
-      const kind = s.tool.slice(8) as Surface["kind"];
+      const kind = s.tool.slice(8) as (typeof surfaceKinds)[number];
       if (
         Math.abs(q.x - start.x) >= 0.3 &&
         Math.abs(q.z - start.z) >= 0.3 &&
@@ -221,6 +222,59 @@ export default function FloorPlan() {
     window.addEventListener("keydown", cancel);
     return () => window.removeEventListener("keydown", cancel);
   }, []);
+  const renderSurface = (o: Surface) => (
+    <Group
+      key={o.id}
+      x={o.x}
+      y={o.z}
+      rotation={o.rotation}
+      draggable={s.tool === "select"}
+      onPointerDown={(e) => {
+        if (s.tool === "select" || s.tool === "erase") {
+          e.cancelBubble = true;
+          s.select(o.id);
+          if (s.tool === "erase") s.remove();
+        }
+      }}
+      onDragEnd={(e) =>
+        s.edit((p) => {
+          const item = p.surfaces.find((v) => v.id === o.id)!;
+          item.x = s.snapping ? snap(e.target.x(), s.gridStep) : e.target.x();
+          item.z = s.snapping ? snap(e.target.y(), s.gridStep) : e.target.y();
+        })
+      }
+    >
+      <Rect
+        x={-o.width / 2}
+        y={-o.depth / 2}
+        width={o.width}
+        height={o.depth}
+        fill={isExterior(o) ? undefined : o.color}
+        opacity={0.7}
+        stroke={s.selected.includes(o.id) ? "#af6842" : "#7b856c"}
+        strokeWidth={isExterior(o) ? 0.07 : 0.04}
+        dash={isExterior(o) ? [0.15, 0.08] : undefined}
+      />
+      {o.kind === "roof" && (o.roofStyle ?? "gable") === "gable" && (
+        <Line
+          points={[-o.width / 2, 0, o.width / 2, 0]}
+          stroke="#59616a"
+          strokeWidth={0.04}
+          dash={[0.12, 0.06]}
+        />
+      )}
+      <Text
+        x={-o.width / 2}
+        y={-0.08}
+        width={o.width}
+        align="center"
+        text={o.name}
+        fontSize={0.16}
+        fill="#344032"
+        listening={false}
+      />
+    </Group>
+  );
   return (
     <div
       className="floor-holder"
@@ -311,54 +365,7 @@ export default function FloorPlan() {
         }}
       >
         <Layer>
-          {p.surfaces.map((o) => (
-            <Group
-              key={o.id}
-              x={o.x}
-              y={o.z}
-              rotation={o.rotation}
-              draggable={s.tool === "select"}
-              onPointerDown={(e) => {
-                if (s.tool === "select" || s.tool === "erase") {
-                  e.cancelBubble = true;
-                  s.select(o.id);
-                  if (s.tool === "erase") s.remove();
-                }
-              }}
-              onDragEnd={(e) =>
-                s.edit((p) => {
-                  const item = p.surfaces.find((v) => v.id === o.id)!;
-                  item.x = s.snapping
-                    ? snap(e.target.x(), s.gridStep)
-                    : e.target.x();
-                  item.z = s.snapping
-                    ? snap(e.target.y(), s.gridStep)
-                    : e.target.y();
-                })
-              }
-            >
-              <Rect
-                x={-o.width / 2}
-                y={-o.depth / 2}
-                width={o.width}
-                height={o.depth}
-                fill={o.color}
-                opacity={0.7}
-                stroke={s.selected.includes(o.id) ? "#af6842" : "#7b856c"}
-                strokeWidth={0.04}
-              />
-              <Text
-                x={-o.width / 2}
-                y={-0.08}
-                width={o.width}
-                align="center"
-                text={o.name}
-                fontSize={0.16}
-                fill="#344032"
-                listening={false}
-              />
-            </Group>
-          ))}
+          {p.surfaces.filter((o) => !isExterior(o)).map(renderSurface)}
           {p.measurements.map((m) => (
             <Group key={m.id} onClick={() => s.select(m.id)}>
               <Line
@@ -870,6 +877,7 @@ export default function FloorPlan() {
             borderStroke="#b86c44"
             anchorStroke="#b86c44"
           />
+          {p.surfaces.filter(isExterior).map(renderSurface)}
         </Layer>
       </Stage>
       {s.tool === "select" &&

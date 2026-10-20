@@ -8,6 +8,7 @@ test("updates a dashboard preview and exports room-grouped furniture costs", asy
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
   await page.getByRole("button", { name: "New project", exact: true }).click();
+  await expect(page).toHaveURL(/\/editor\//);
   await page.getByRole("button", { name: "2D", exact: true }).click();
   await page
     .getByRole("button", { name: "Oak lounge chair", exact: false })

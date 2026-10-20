@@ -1,3 +1,4 @@
+import { isExterior, exteriorPreviewFaces } from "@/lib/exteriors";
 import type { Point, Project } from "@/lib/model";
 import { corners, wallCorners } from "@/lib/geometry";
 
@@ -67,7 +68,15 @@ export default function ProjectThumbnail({
       a.base.reduce((n, q) => n + q.x + q.z, 0) / a.base.length -
       b.base.reduce((n, q) => n + q.x + q.z, 0) / b.base.length,
   );
+  const exterior = p.surfaces
+    .filter(isExterior)
+    .sort((a, b) => a.elevation - b.elevation);
   const bounds = [
+    ...exterior.flatMap((o) =>
+      exteriorPreviewFaces(o)
+        .flat()
+        .map(([x, y, z]) => iso({ x, z }, y)),
+    ),
     ...p.rooms.flatMap((r) => r.points.map((q) => iso(q))),
     ...p.surfaces.flatMap((s) => corners(s).map((q) => iso(q, s.elevation))),
     ...solids.flatMap((s) => s.base.flatMap((q) => [iso(q), iso(q, s.height)])),
@@ -90,15 +99,17 @@ export default function ProjectThumbnail({
       <title>
         {p.name} — {p.activeFloor?.name ?? "Ground floor"}
       </title>
-      {p.surfaces.map((s) => (
-        <polygon
-          key={s.id}
-          points={points(corners(s).map((q) => iso(q, s.elevation)))}
-          fill={s.color}
-          stroke="#766e60"
-          strokeWidth={0.025}
-        />
-      ))}
+      {p.surfaces
+        .filter((s) => !isExterior(s))
+        .map((s) => (
+          <polygon
+            key={s.id}
+            points={points(corners(s).map((q) => iso(q, s.elevation)))}
+            fill={s.color}
+            stroke="#766e60"
+            strokeWidth={0.025}
+          />
+        ))}
       {p.rooms.map((r) => (
         <polygon
           key={r.id}
@@ -144,6 +155,19 @@ export default function ProjectThumbnail({
           />
         </g>
       ))}
+      {exterior.map((o) => (
+        <g key={o.id} opacity={o.kind === "balcony" ? 0.65 : 1}>
+          {exteriorPreviewFaces(o).map((face, i) => (
+            <polygon
+              key={i}
+              points={points(face.map(([x, y, z]) => iso({ x, z }, y)))}
+              fill={o.color}
+              stroke="#4a514d"
+              strokeWidth={0.025}
+            />
+          ))}
+        </g>
+      ))}
       {!bounds.length && (
         <text x={4} y={3} fontSize={0.5} textAnchor="middle" fill="#686a60">
           Empty floor
@@ -155,6 +179,11 @@ export default function ProjectThumbnail({
 
 export function comparisonViewBox(projects: Project[]) {
   const pts = projects.flatMap((p) => [
+    ...p.surfaces.filter(isExterior).flatMap((o) =>
+      exteriorPreviewFaces(o)
+        .flat()
+        .map(([x, y, z]) => iso({ x, z }, y)),
+    ),
     ...p.rooms.flatMap((r) => r.points.map((q) => iso(q))),
     ...p.surfaces.flatMap((s) => corners(s).map((q) => iso(q, s.elevation))),
     ...p.walls.flatMap((w) =>
