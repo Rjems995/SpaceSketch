@@ -135,6 +135,21 @@ test("successful login returns to the dashboard", async ({ page, context }) => {
   ).toBeVisible();
   await page.getByRole("button", { name: "New project", exact: true }).click();
   await expect(page).toHaveURL(/\/editor\//);
+  const editorUrl = page.url();
+  await page.getByRole("button", { name: "Your account", exact: true }).click();
+  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await expect(page).toHaveURL(/\/login\?next=/);
+  await page.goto("/");
+  await expect(
+    page.getByRole("button", { name: "Log in", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".project-grid")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Rename project", exact: true }),
+  ).toHaveCount(0);
+  await page.goto(editorUrl);
+  await expect(page).toHaveURL(/\/login\?next=/);
+  await expect(page.getByLabel("Project name")).toHaveCount(0);
 });
 
 test("signed-out visitors cannot create projects from the homepage", async ({
