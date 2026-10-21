@@ -127,8 +127,6 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
     [presentation, setPresentation] = useState(false),
     [sidebar, setSidebar] = useState(false),
     [auth, setAuth] = useState(false),
-    [email, setEmail] = useState(""),
-    [password, setPassword] = useState(""),
     [user, setUser] = useState<string | null>(null),
     [busy, setBusy] = useState(false);
   const closeDialog = useCallback(() => {
@@ -603,11 +601,21 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
           </nav>
         )}
         <button
-          className="avatar"
+          className={user ? "avatar" : "avatar login-entry"}
           title={user || "Account"}
-          onClick={() => setAuth(true)}
+          aria-label={user ? "Your account" : "Log in"}
+          onClick={async () => {
+            if (user) setAuth(true);
+            else {
+              if (p) await save();
+              router.push(
+                "/login" +
+                  (p ? "?next=" + encodeURIComponent("/editor/" + p.id) : ""),
+              );
+            }
+          }}
         >
-          {user ? user[0].toUpperCase() : "S"}
+          {user ? user[0].toUpperCase() : "Log in"}
         </button>
       </header>
       {!p ? (
@@ -2095,30 +2103,14 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
       )}
       {auth && (
         <div className="modal-backdrop">
-          <form
+          <div
             className="modal"
             role="dialog"
             aria-modal="true"
             aria-label="Account"
             tabIndex={-1}
-            onSubmit={async (e) => {
-              e.preventDefault();
-              if (!supabase) return;
-              setBusy(true);
-              const { error } = await supabase.auth.signInWithPassword({
-                email,
-                password,
-              });
-              setBusy(false);
-              if (error) toast.error(error.message);
-              else {
-                setAuth(false);
-                toast.success("Signed in");
-              }
-            }}
           >
             <button
-              type="button"
               className="modal-close"
               aria-label="Close account"
               onClick={() => setAuth(false)}
@@ -2126,90 +2118,28 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
               <X />
             </button>
             <BrandLogo large />
-            <h2>{user ? "Your account" : "Welcome to your studio"}</h2>
-            {!supabase ? (
-              <>
-                <p>
-                  You’re using local demo mode. Projects are saved in this
-                  browser.
-                </p>
-                <p>
-                  Configure the Supabase environment variables to enable
-                  accounts and cloud storage. See README.md.
-                </p>
-              </>
-            ) : user ? (
-              <>
-                <p>{user}</p>
-                <button
-                  type="button"
-                  className="primary"
-                  onClick={async () => {
-                    await supabase!.auth.signOut();
-                    setAuth(false);
-                  }}
-                >
-                  Sign out
-                </button>
-              </>
-            ) : (
-              <>
-                <label>
-                  Email
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </label>
-                <label>
-                  Password
-                  <input
-                    type="password"
-                    minLength={8}
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </label>
-                <button disabled={busy} className="primary" type="submit">
-                  {busy ? "Signing in…" : "Sign in"}
-                </button>
-                <button
-                  type="button"
-                  className="secondary"
-                  onClick={async () => {
-                    const { error } = await supabase!.auth.signUp({
-                      email,
-                      password,
-                    });
-                    error
-                      ? toast.error(error.message)
-                      : toast.success(
-                          "Check your email to confirm your account.",
-                        );
-                  }}
-                >
-                  Create an account
-                </button>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const { error } =
-                      await supabase!.auth.resetPasswordForEmail(email, {
-                        redirectTo: `${window.location.origin}/reset-password`,
-                      });
-                    error
-                      ? toast.error(error.message)
-                      : toast.success("Password reset email sent.");
-                  }}
-                >
-                  Send password reset email
-                </button>
-              </>
-            )}
-          </form>
+            <h2>Your account</h2>
+            <p>{user}</p>
+            <button
+              className="primary"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                try {
+                  await save();
+                  const result = await supabase?.auth.signOut();
+                  if (result?.error) throw result.error;
+                  setAuth(false);
+                } catch (e) {
+                  toast.error((e as Error).message);
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              {busy ? "Signing out..." : "Sign out"}
+            </button>
+          </div>
         </div>
       )}
     </div>

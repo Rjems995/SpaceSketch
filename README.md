@@ -139,7 +139,7 @@ See the [frontend README](frontend/README.md) and [backend README](backend/READM
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-public-anon-key
    ```
 
-4. Set the Auth Site URL to your frontend URL. Allow `http://localhost:3000/reset-password` and the production `/reset-password` URL for password recovery.
+4. Set the Auth Site URL to your frontend URL. Allow `http://localhost:3000/reset-password` and the production `/reset-password` URL for password recovery. Also allow `http://localhost:3000/dashboard` and the production `/dashboard` URL for signup email confirmation.
 5. Restart the frontend, open the account menu, and sign in. Save to sync a project, use **Load cloud projects** on another device, and use **Share** to manage links and versions.
 
 Only public browser credentials belong in these variables. Do not expose a service-role key.
@@ -222,3 +222,7 @@ Movement stops when focus leaves the page or enters a text field. Walls and furn
 Open **Build > Roof & exterior** to add a roof, balcony, or boundary fence. Roofs start over the current floor's wall bounds with a 30 cm overhang. Properties supports flat, gable, and shed roofs; roof rise; railing height; solid/picket fences; position, dimensions, elevation, rotation, and color. Choose an exterior finish after selecting a structure or wall (wall finishes apply to both sides). **Show roofs in 3D** temporarily hides roofs for interior editing; hidden roofs are omitted from 3D image/GLB exports.
 
 Exterior structures use rectangular footprints, with dashed outlines in 2D. Drag an outline or use the object selector and Properties to edit it. They support undo, duplication, deletion, per-floor persistence, JSON/cloud snapshots, PDF footprints, 3D image/GLB exports, and simplified dashboard previews. Balconies have railings on three sides and an open rear edge. Fence panels block the fixed-height walk-through. Structural items are excluded from the furniture shopping list. Automatic roof trimming, structural engineering, multi-floor assemblies, and stair/elevation navigation are not included.
+
+### Account pages
+
+Open `/login` or `/signup`, or choose **Log in** in the homepage header. Both pages use the homepage's 3D house and sage palette, with responsive forms, password visibility controls, email confirmation, and password recovery. Guest design remains available. Authentication browser tests mock Supabase responses and do not create live accounts.
