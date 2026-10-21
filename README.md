@@ -6,7 +6,7 @@
 
 Design interior and outdoor spaces with a connected **2D floor plan and 3D editor**. Draw rooms, resize walls, place furniture, edit windows and doors, and add outdoor surfaces.
 
-Creating, importing, and duplicating projects requires a signed-in Supabase account. Visitors can browse the homepage. Supabase also provides cloud storage, version history, and shared viewing.
+Viewing saved projects and opening the editor requires a signed-in Supabase account. Visitors can browse the homepage and template previews, but must log in to create, import, duplicate, or edit projects. Supabase also provides cloud storage, version history, and shared viewing.
 
 ## Quick start
 
@@ -19,11 +19,11 @@ npm run setup
 npm run dev
 ```
 
-Open [localhost:3000](http://localhost:3000). No environment variables are required for local demo mode.
+Open [localhost:3000](http://localhost:3000). Configure Supabase using the setup section below, then create an account at `/signup` or sign in at `/login` to use projects. Without configuration, only public browsing is available.
 
 `npm run setup` installs the locked dependencies in `frontend/`. Root scripts forward to that package. You can also run `npm ci` and `npm run dev` directly from `frontend/`.
 
-On Windows PowerShell, use `npm.cmd` if execution policy blocks `npm.ps1`.
+On Windows PowerShell, use `npm.cmd` if execution policy blocks `npm.ps1`. If you see `next is not recognized`, install dependencies with `npm run setup` from the repository root, or `npm ci` from `frontend/`, before running the dev command again. Run each command on its own line.
 
 ## Features
 
@@ -60,8 +60,8 @@ These are editable design surfaces. Terrain sculpting, excavation, and pool simu
 
 - 2D, 3D, and split views; six camera presets and an isometric wall cutaway.
 - Day/evening lighting, sun direction, lamp lights, shadows, ceiling visibility, and quality settings.
-- Per-lamp on/off, brightness (0?200%), and color temperature (1800?6500 K) controls in Lighting or selected-lamp Properties. Settings support undo and are saved with each floor, including JSON backups and shared views. Color temperature is an artistic approximation, not photometric calibration.
-- Desktop walkthrough with WASD movement and pointer-lock mouse look.
+- Per-lamp on/off, brightness (0-200%), and color temperature (1800-6500 K) controls in Lighting or selected-lamp Properties. Settings support undo and are saved with each floor, including JSON backups and shared views. Color temperature is an artistic approximation, not photometric calibration.
+- Eye-level walkthrough with WASD/arrow keys, drag-to-look, Q/E turning, and touch movement buttons.
 - Mobile touch targets, collapsible library and properties panels, 2D pinch zoom/pan, and 3D zoom/orbit/pan/reset buttons.
 - Measurements in meters, centimeters, feet, or inches; user-entered budget estimates.
 - Keyboard-accessible object selectors, visible focus outlines, labeled toolbar actions, reduced-motion styles, and focus trapping/restoration in account and sharing dialogs.
@@ -76,7 +76,7 @@ These are editable design surfaces. Terrain sculpting, excavation, and pool simu
 
 - Local autosave, interrupted-session recovery, revision checks, and up to 100 undo steps.
 - Export JSON backups, PDF floor plans for the current floor with wall/opening dimensions and custom measurements, high-resolution PNG/JPEG views (up to 3840 pixels wide), and GLB geometry for the current floor. JSON backups retain every floor. Images retain the viewport aspect ratio; image and GLB exports require a visible 3D view.
-- Optional Supabase sign-in, cloud save/load, historical versions, and revocable read-only sharing links.
+- Supabase authentication, cloud save/load, historical versions, and revocable read-only sharing links.
 
 ## Editor guide
 
@@ -101,7 +101,7 @@ These are editable design surfaces. Terrain sculpting, excavation, and pool simu
 | Delete                         | Delete selection; locked furniture is preserved                                                      |
 | Escape                         | Cancel drawing or a handle preview; release selection or exit presentation/walkthrough as applicable |
 
-Local projects are stored in the current browser under `spacesketch-projects-v1`. Export JSON backups before clearing browser data. Local projects do not automatically appear in another browser or device.
+Local projects are stored in the current browser under `spacesketch-projects-v1`. Export JSON backups before clearing browser data. Local projects do not automatically appear in another browser or device. Local storage is browser-scoped, not an account-isolated vault; Supabase row-level security protects cloud records.
 
 ## Repository structure
 
@@ -128,7 +128,7 @@ The backend runs on Supabase; there is no separate Node.js backend server to sta
 
 See the [frontend README](frontend/README.md) and [backend README](backend/README.md) for folder-specific setup.
 
-## Optional Supabase setup
+## Supabase setup (required for project access)
 
 1. Create a Supabase project and run [001_initial.sql](backend/supabase/migrations/001_initial.sql) in its SQL editor.
 2. Enable email/password authentication.
@@ -140,13 +140,13 @@ See the [frontend README](frontend/README.md) and [backend README](backend/READM
    ```
 
 4. Set the Auth Site URL to your frontend URL. Allow `http://localhost:3000/reset-password` and the production `/reset-password` URL for password recovery. Also allow `http://localhost:3000/dashboard` and the production `/dashboard` URL for signup email confirmation.
-5. Restart the frontend, open the account menu, and sign in. Save to sync a project, use **Load cloud projects** on another device, and use **Share** to manage links and versions.
+5. Restart the frontend and use **Log in** or visit `/signup` to create an account. Confirm your email if email confirmation is enabled. Save to sync a project, use **Load cloud projects** on another device, and use **Share** to manage links and versions.
 
 Only public browser credentials belong in these variables. Do not expose a service-role key.
 
 The backend uses row-level security and database functions for ownership checks, optimistic revision checks, version history, and shared reads. Anyone with an active sharing token can read that project; revoking the link removes its token.
 
-**Live Supabase integration has not been verified against a configured project in this workspace.** Before deployment, verify authentication, owner isolation, concurrent saves, version restoration, sharing/revocation, and storage permissions. The SQL validation does not duplicate every client-side geometry constraint.
+Authentication browser tests use mocked Supabase responses; they do not verify delivery of real confirmation or recovery emails. Before deployment, verify authentication, owner isolation, concurrent saves, version restoration, sharing/revocation, and storage permissions. The SQL validation does not duplicate every client-side geometry constraint.
 
 ## Commands and verification
 
@@ -166,7 +166,7 @@ Run these from the repository root:
 | `npm run build`        | Build for production                                                                                                                  |
 | `npm start`            | Serve the production build; run build first                                                                                           |
 
-The last verified feature update passed the production build, lint, **70 unit tests**, and **21 browser tests**. Coverage includes geometry, snapping, schema compatibility, live previews and undo, opening edits, outdoor surfaces, persistence, imports/exports, catalog thumbnails, and mobile controls.
+The latest access-control update passed TypeScript and three authentication browser tests covering signup validation, password recovery, login, authenticated creation, sign-out, hidden project cards, and direct editor redirects. These tests mock Supabase. Other suites cover geometry, snapping, persistence, imports/exports, and editor controls; this focused update did not rerun the full suite.
 
 Playwright is configured to use installed **Google Chrome**. It starts a local development server when needed and can reuse an existing one. Screenshots and failure artifacts are written to `frontend/test-results/`, which Git ignores.
 
@@ -188,7 +188,7 @@ For a Vercel deployment, use these project settings:
 | Install command | `npm ci`        |
 | Build command   | `npm run build` |
 
-Use a Node.js version compatible with the local setup. Configure the two public Supabase variables if cloud features are needed, apply the migration, and add the deployed URL to the Supabase authentication settings. Without Supabase configuration, the app runs in local demo mode.
+Use a Node.js version compatible with the local setup. Configure both public Supabase variables, apply the migration, and add the deployed URL and authentication redirects to the Supabase settings. Without Supabase configuration, visitors can browse the homepage but cannot access projects.
 
 ## Current limitations
 
@@ -196,10 +196,10 @@ Use a Node.js version compatible with the local setup. Configure the two public 
 - Curves are segmented approximations. Openings must fit within an individual segment; remove openings before bending a wall. Standalone curves do not automatically create a room floor.
 - No full constraint solver, viewport rulers, or automatic placement suggestions.
 - Standalone wall loops do not automatically create floors. Use the polygon room tool; overlapping room floors are not merged automatically.
-- Collision warnings do not prevent every overlap. Walkthrough uses simplified collision geometry and is intended for desktop use.
+- Collision warnings do not prevent every overlap. Walkthrough uses simplified collision geometry.
 - Outdoor surfaces are rectangular; terrain supports a linear slope rather than freeform sculpting. Walkthrough does not simulate terrain or water physics.
 - Imported models must be self-contained and no larger than 2.9 MB. Embedded assets count toward the 5 MB project limit and browser storage quota.
-- Cloud asset uploads, automatic retry queues, and complete server-side geometry validation need further work. Cloud features require live integration testing.
+- Cloud asset uploads and complete server-side geometry validation need further work. Cloud features require live integration testing.
 - No real-time collaboration, AI design service, supplier pricing, or photorealistic rendering. Budget totals use prices entered by the user.
 - Broader accessibility, browser, and device testing is still needed.
 
@@ -225,4 +225,4 @@ Exterior structures use rectangular footprints, with dashed outlines in 2D. Drag
 
 ### Account pages
 
-Open `/login` or `/signup`, or choose **Log in** in the homepage header. Both pages use the homepage's 3D house and sage palette, with responsive forms, password visibility controls, email confirmation, and password recovery. Visitors can browse the homepage; creating, importing, and duplicating projects requires login. Authentication browser tests mock Supabase responses and do not create live accounts.
+Open `/login` or `/signup`, or choose **Log in** in the homepage header. Both pages use the homepage's 3D house and sage palette, with responsive forms, password visibility controls, email confirmation, and password recovery. Visitors can browse the homepage, but saved project cards are hidden until login. Creating, importing, duplicating, opening, and editing projects requires a signed-in account. Direct `/editor/[projectId]` links redirect signed-out visitors to login and return to the requested editor after authentication. Signing out closes the editor and hides saved projects without deleting browser data. Authentication browser tests mock Supabase responses and do not create live accounts.

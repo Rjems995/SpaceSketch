@@ -14,7 +14,7 @@ backend/
 1. Create a Supabase project.
 2. Run [`supabase/migrations/001_initial.sql`](supabase/migrations/001_initial.sql) once in its SQL editor. It creates profiles, projects, project versions, assets, sharing tokens, a private storage bucket, RLS policies, and the save/shared-read functions.
 3. Enable email/password authentication.
-4. Set Auth's Site URL to the deployed frontend URL. Allow `http://localhost:3000/reset-password` and the production `/reset-password` URL for password recovery.
+4. Set Auth's Site URL to the deployed frontend URL. Allow `http://localhost:3000/reset-password` and the production `/reset-password` URL for password recovery. Also allow `http://localhost:3000/dashboard` and the production `/dashboard` URL for signup email confirmation.
 5. Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `frontend/.env.local`, then restart the frontend. Only public browser credentials belong there; do not expose a service-role key.
 
 Supabase runs the backend services; this folder does not need a separate Node.js server or `npm install`. The browser client in `frontend/lib/supabase.ts` calls those services under the authenticated user's RLS permissions.
