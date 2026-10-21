@@ -6,7 +6,7 @@
 
 Design interior and outdoor spaces with a connected **2D floor plan and 3D editor**. Draw rooms, resize walls, place furniture, edit windows and doors, and add outdoor surfaces.
 
-SpaceSketch works locally without an account. Supabase provides optional authentication, cloud storage for projects, version history, and shared viewing.
+Creating, importing, and duplicating projects requires a signed-in Supabase account. Visitors can browse the homepage. Supabase also provides cloud storage, version history, and shared viewing.
 
 ## Quick start
 
@@ -225,4 +225,4 @@ Exterior structures use rectangular footprints, with dashed outlines in 2D. Drag
 
 ### Account pages
 
-Open `/login` or `/signup`, or choose **Log in** in the homepage header. Both pages use the homepage's 3D house and sage palette, with responsive forms, password visibility controls, email confirmation, and password recovery. Guest design remains available. Authentication browser tests mock Supabase responses and do not create live accounts.
+Open `/login` or `/signup`, or choose **Log in** in the homepage header. Both pages use the homepage's 3D house and sage palette, with responsive forms, password visibility controls, email confirmation, and password recovery. Visitors can browse the homepage; creating, importing, and duplicating projects requires login. Authentication browser tests mock Supabase responses and do not create live accounts.

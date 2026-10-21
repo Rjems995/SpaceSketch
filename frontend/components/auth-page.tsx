@@ -334,13 +334,13 @@ export default function AuthPage({
                 or keep exploring
                 <span />
               </div>
-              <Link className="auth-guest" href="/dashboard">
-                Continue without an account
+              <Link className="auth-guest" href="/">
+                Browse the homepage
                 <ArrowUpRight size={15} />
               </Link>
               <p className="auth-local-note">
                 <Check size={13} />
-                You can design locally without signing up.
+                Log in or sign up to create your own projects.
               </p>
             </>
           )}

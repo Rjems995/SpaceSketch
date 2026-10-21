@@ -133,4 +133,34 @@ test("successful login returns to the dashboard", async ({ page, context }) => {
   await expect(
     page.getByRole("button", { name: "Your account", exact: true }),
   ).toBeVisible();
+  await page.getByRole("button", { name: "New project", exact: true }).click();
+  await expect(page).toHaveURL(/\/editor\//);
+});
+
+test("signed-out visitors cannot create projects from the homepage", async ({
+  page,
+  context,
+}) => {
+  if (url)
+    await context.route(new URL(url).origin + "/**", (route) =>
+      route.fulfill({ json: {} }),
+    );
+  await page.goto("/");
+  await page.getByRole("button", { name: "New project", exact: true }).click();
+  await expect(page).toHaveURL(/\/login\?next=/);
+  expect(
+    await page.evaluate(() =>
+      JSON.parse(localStorage.getItem("spacesketch-projects-v1") || "[]"),
+    ),
+  ).toHaveLength(0);
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "Explore a space", exact: false })
+    .click();
+  await expect(page).toHaveURL(/\/login\?next=/);
+  expect(
+    await page.evaluate(() =>
+      JSON.parse(localStorage.getItem("spacesketch-projects-v1") || "[]"),
+    ),
+  ).toHaveLength(0);
 });

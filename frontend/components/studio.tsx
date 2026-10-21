@@ -250,7 +250,19 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
     setCategory("All");
     router.push(`/editor/${project.id}`);
   };
-  const create = (name: string) => {
+  const requireAccount = async () => {
+    try {
+      const result = await supabase?.auth.getSession();
+      if (result?.data.session && !result.error) return true;
+    } catch {
+      // Fail closed when authentication cannot be checked.
+    }
+    toast.info("Log in or sign up to create projects.");
+    router.push("/login?next=%2Fdashboard");
+    return false;
+  };
+  const create = async (name: string) => {
+    if (!(await requireAccount())) return;
     const next = saveLocal(template(name));
     setProjects(listProjects());
     open(next);
@@ -469,7 +481,13 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
           const file = e.target.files?.[0];
           if (file)
             try {
-              const next = saveLocal(await importProject(file));
+              if (!(await requireAccount())) {
+                e.target.value = "";
+                return;
+              }
+              const imported = await importProject(file);
+              if (!(await requireAccount())) return;
+              const next = saveLocal(imported);
               setProjects(listProjects());
               open(next);
               toast.success("Project imported");
@@ -747,7 +765,8 @@ export default function Studio({ projectId }: { projectId?: string } = {}) {
                         <button
                           aria-label="Duplicate project"
                           title="Duplicate project"
-                          onClick={() => {
+                          onClick={async () => {
+                            if (!(await requireAccount())) return;
                             saveLocal({
                               ...project,
                               id: crypto.randomUUID(),
